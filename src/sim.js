@@ -1,4 +1,4 @@
-/* Catnap physics core — shared by the browser game and the Node level generator. No DOM here. */
+/* Snoozeline physics core — shared by the browser game and the Node level generator. No DOM here. */
 (function (root) {
   'use strict';
   var M = (typeof module === 'object' && typeof require === 'function') ? require('matter-js') : root.Matter;
@@ -89,6 +89,8 @@
   }
 
   function Sim(level) {
+    // body ids decide collision-pair order: reset them so a level always plays out the same way
+    M.Common._nextId = 0;
     this.level = level;
     this.engine = M.Engine.create({ gravity: { x: 0, y: 1, scale: 0.0011 }, positionIterations: 10, velocityIterations: 8 });
     this.world = this.engine.world;
@@ -134,6 +136,24 @@
     if (this.sleep <= 0) { this.state = 'failed'; this.fx.push({ t: 'fail' }); }
   };
 
+  Sim.prototype.touchesCat = function (stroke) {
+    var b = this.cat.bounds, s = stroke.bounds;
+    if (s.max.x < b.min.x - 2 || s.min.x > b.max.x + 2 || s.max.y < b.min.y - 2 || s.min.y > b.max.y + 2) return false;
+    var parts = stroke.parts.slice(1);
+    for (var i = 0; i < parts.length; i++) {
+      var c = M.Collision.collides(this.cat, parts[i]);
+      // only a line lying ON the cat counts (contact from above), not one leaning on its side
+      if (c && c.collided && Math.abs(c.normal.y) > 0.7 && parts[i].position.y < this.cat.position.y) return true;
+    }
+    return false;
+  };
+
+  // is a point inside the no-draw zone around the cat?
+  Sim.prototype.inCatZone = function (x, y, pad) {
+    var b = this.cat.bounds; pad = pad || 0;
+    return x > b.min.x - pad && x < b.max.x + pad && y > b.min.y - pad && y < b.max.y + pad;
+  };
+
   Sim.prototype.onCollide = function (e) {
     for (var i = 0; i < e.pairs.length; i++) {
       var A = e.pairs[i].bodyA, B = e.pairs[i].bodyB;
@@ -145,16 +165,29 @@
           other.dead = true; this.wet++;
           this.fx.push({ t: 'splash', x: other.position.x, y: other.position.y });
           if (this.wet >= WET_MAX) { this.wet = 0; this.damage(1, other.position.x, other.position.y); }
+        } else if (k === 'stroke') {
+          // a line dropped onto the cat wakes it
+          if (Math.hypot(other.velocity.x, other.velocity.y) > 2.2) this.damage(1, other.position.x, this.cat.position.y - 15);
         } else if (k === 'bee') {
           other.dead = true; this.damage(1, other.position.x, other.position.y);
         } else if (k === 'ball' || k === 'pot') {
           var sp = Math.hypot(other.velocity.x, other.velocity.y);
-          if (sp > 1.0) this.damage(1, other.position.x, other.position.y);
+          if (sp > 1.0) {
+            this.damage(1, other.position.x, other.position.y);
+            // the cat flinches: knock the object away so things never pile up on it
+            var dx = other.position.x - this.cat.position.x, side = dx < 0 ? -1 : 1;
+            M.Body.setVelocity(other, { x: side * (2.2 + Math.min(2, sp * 0.3)), y: -3.2 });
+          }
         }
       } else {
         var th = (a.label === 'ball' || a.label === 'pot') ? a : ((b.label === 'ball' || b.label === 'pot') ? b : null);
         if (th) {
           var sp2 = Math.hypot(th.velocity.x, th.velocity.y);
+          var st = th === a ? b : a;
+          // a hit on a line that lies on the cat goes straight through to the cat
+          if (st.label === 'stroke' && sp2 > 2.5 && this.touchesCat(st)) {
+            this.damage(1, th.position.x, th.position.y);
+          }
           if (sp2 > 1.6 && (!th.lastThud || this.t - th.lastThud > 0.15)) {
             th.lastThud = this.t; this.fx.push({ t: 'thud', x: th.position.x, y: th.position.y, v: sp2 });
           }
@@ -172,6 +205,7 @@
       b = M.Bodies.rectangle(ev.x, ev.y, 26 * ev.s, 26 * ev.s, { density: 0.005, restitution: 0.15, friction: 0.5, label: 'pot',
         chamfer: { radius: 4 }, collisionFilter: { category: BALL_BIT, mask: CAT_BIT | BALL_BIT } });
       M.Body.setAngle(b, (this.beeRand() - 0.5) * 0.6);
+      b.size = 26 * ev.s;
     } else if (k === 'drop') {
       b = M.Bodies.circle(ev.x, ev.y, 3.2, { density: 0.001, restitution: 0.1, friction: 0.01, frictionAir: 0.02, label: 'drop',
         collisionFilter: { category: DROP_BIT, mask: CAT_BIT } });
@@ -221,10 +255,19 @@
     }
   };
 
+  // stars are measured against the level's own slack (budget minus the cheapest known solution),
+  // so 3 stars stay reachable on tight late levels too
   Sim.prototype.stars = function () {
-    var r = this.inkLeft() / this.level.ink;
-    var s = r >= 0.4 ? 3 : (r >= 0.15 ? 2 : 1);
-    return Math.min(s, this.hurts === 0 ? 3 : 2);
+    var L = this.level, used = this.inkUsed, s;
+    if (L.minInk) {
+      var slack = Math.max(1, L.ink - L.minInk);
+      s = used <= L.minInk + slack * 0.5 ? 3 : (used <= L.minInk + slack * 0.85 ? 2 : 1);
+    } else {
+      var r = this.inkLeft() / L.ink;
+      s = r >= 0.4 ? 3 : (r >= 0.15 ? 2 : 1);
+    }
+    // one bump is always forgiven; on levels where even the reference solution takes more, matching it is enough
+    return Math.min(s, this.hurts <= Math.max(1, L.bumps || 0) ? 3 : 2);
   };
 
   var api = { Sim: Sim, rng: rng, resample: resample, pathLength: pathLength, strokeBody: strokeBody,

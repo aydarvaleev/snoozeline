@@ -1,15 +1,17 @@
 {
-  "forciblySetPlatformId": "",
   "advertisement": {
     "interstitial": {
+      "placementFallback": "level_completed",
       "placements": [
-        { "platform": "playgama", "id": "level_completed" },
-        { "platform": "playgama", "id": "level_failed" }
+        { "id": "level_completed" },
+        { "id": "level_failed" },
+        { "id": "menu" }
       ]
     },
     "rewarded": {
       "placements": [
-        { "platform": "playgama", "id": "skip_level" }
+        { "id": "skip_level" },
+        { "id": "show_hint" }
       ]
     }
   }

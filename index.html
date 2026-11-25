@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="playgama-bridge.js"></script>
 <meta name="color-scheme" content="light">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Catnap</title>
+<title>Snoozeline</title>
 <link rel="icon" href="data:,">
 <style>
 html{color-scheme:light}
@@ -22,7 +23,7 @@ button{font:inherit;color:inherit;border:0;cursor:pointer}
 .btn:active{transform:translateY(.1em)}
 #hud{position:absolute;left:0;right:0;top:0;padding:.6em;display:flex;align-items:center;gap:.5em;pointer-events:none}
 #hud>*{pointer-events:auto}
-#hud .mid{flex:1;pointer-events:none;text-align:center}
+#hud .mid{flex:1;pointer-events:none;text-align:center;background:rgba(255,248,239,.88);border-radius:1em;padding:.3em .7em .45em;box-shadow:0 .15em 0 rgba(60,40,80,.15)}
 #lvl{font-weight:800;font-size:1.05em}
 #zs .z{display:inline-block;font-weight:800;font-size:1.2em;color:#5b4aa8;margin:0 .12em}
 #zs .z.off{opacity:.2}
@@ -31,14 +32,19 @@ button{font:inherit;color:inherit;border:0;cursor:pointer}
 #timebar{height:.3em;margin-top:.25em;border-radius:1em;background:rgba(60,40,80,.12);overflow:hidden}
 #timefill{height:100%;width:0;background:#f2a65a}
 #hint,#tapHint{position:absolute;left:8%;right:8%;top:17%;text-align:center;font-weight:700;background:rgba(255,255,255,.85);border-radius:1em;padding:.7em;pointer-events:none}
-#tapHint{top:auto;bottom:6%;background:none;opacity:.7}
+#tapHint{top:44%;background:rgba(255,255,255,.6);font-weight:600}
 .modal{position:fixed;inset:0;background:rgba(43,33,64,.55);display:flex;align-items:center;justify-content:center;padding:1em}
 .card{background:#fff8ef;border-radius:1.4em;padding:1.2em;width:100%;max-width:20em;text-align:center;box-shadow:0 .4em 0 rgba(0,0,0,.2)}
 .card h2{margin:.2em 0 .5em;font-size:1.4em}
 .card .row{display:flex;gap:.6em;justify-content:center;flex-wrap:wrap;margin-top:.8em}
 #winstars .ic{width:2.6em;height:2.6em}
-#menu{position:absolute;inset:0;overflow-y:auto;padding:1em .9em 2em}
-#menu h1{margin:.3em 0;text-align:center;font-size:2.2em}
+#menu{position:absolute;inset:0;overflow-y:auto;padding:1em .9em 2em;background:linear-gradient(rgba(255,246,236,.94),rgba(250,230,212,.97))}
+.wh{display:flex;align-items:center;justify-content:space-between;margin:1.1em 0 .45em;padding:.35em .8em;border-radius:.8em;color:#fff;font-weight:800;background:var(--acc)}
+.wh .cnt{display:flex;align-items:center;gap:.2em;font-size:.9em}
+.wh .cnt .ic{width:1em;height:1em}
+.lv b{color:var(--acc)}
+.lv.cur{outline:.2em solid var(--acc);outline-offset:-.2em}
+#menu h1{margin:.2em 0 .1em;text-align:center;font-size:2.4em;color:#5b3fa8;letter-spacing:.02em;text-shadow:0 .08em 0 rgba(91,63,168,.2)}
 #menu h3{margin:1em 0 .4em;font-size:1em;opacity:.8}
 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.5em}
 .lv{aspect-ratio:1;border-radius:.9em;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:1.05em;box-shadow:0 .15em 0 rgba(60,40,80,.2)}
@@ -53,9 +59,38 @@ button{font:inherit;color:inherit;border:0;cursor:pointer}
 .tog.on{background:#7c5cc4}.tog.on:after{left:1.5em}
 select{font:inherit;font-weight:600;color:#2b2140;-webkit-text-fill-color:#2b2140;color-scheme:light;padding:.5em;border-radius:.7em;border:2px solid #d8c9b8;width:100%;background:#fff}
 option{color:#2b2140;background:#fff}
+#toast{position:absolute;left:50%;top:30%;transform:translateX(-50%);background:#e8503f;color:#fff;font-weight:800;padding:.5em 1em;border-radius:1em;pointer-events:none;box-shadow:0 .2em 0 rgba(0,0,0,.2);animation:pop .25s ease-out}
+.modal:not(.hide) .card{animation:cardIn .35s cubic-bezier(.2,1.4,.4,1)}
+#winstars .ic{animation:starIn .45s cubic-bezier(.2,1.6,.4,1) both}
+#winstars .ic:nth-child(2){animation-delay:.15s;transform-origin:center;width:3.2em;height:3.2em}
+#winstars .ic:nth-child(3){animation-delay:.3s}
+@keyframes cardIn{from{transform:scale(.7) translateY(2em);opacity:0}to{transform:none;opacity:1}}
+@keyframes starIn{from{transform:scale(0) rotate(-90deg)}to{transform:none}}
+@keyframes pop{from{transform:translateX(-50%) scale(.6)}to{transform:translateX(-50%) scale(1)}}
+#hint{animation:pop2 .4s ease-out}
+@keyframes pop2{from{opacity:0;transform:translateY(-.6em)}to{opacity:1;transform:none}}
+#splash{position:fixed;left:50%;top:38%;z-index:5;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;padding:1.2em 1.8em 1em;border-radius:1.4em;background:#2a1f4a;color:#fff8ef;pointer-events:none;box-shadow:0 .4em 1.2em rgba(0,0,0,.25);opacity:0;transition:opacity .5s;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#splash.on{opacity:1}
+body.intro #hint,body.intro #tapHint{visibility:hidden}
+#splash .logo{width:min(22vw,16vh);height:min(22vw,16vh)}
+#splash .name{margin-top:.4em;font-size:min(6vw,4.5vh);font-weight:900;letter-spacing:.28em;padding-left:.28em}
+#splash .sub{font-size:min(3vw,2.2vh);font-weight:600;letter-spacing:.6em;padding-left:.6em;opacity:.75}
+#by{text-align:center;margin-top:1.6em;font-size:.8em;font-weight:700;letter-spacing:.12em;opacity:.55}
+@keyframes logoIn{from{transform:scale(.5);opacity:0}to{transform:none;opacity:1}}
+@keyframes fadeUp{from{transform:translateY(.6em);opacity:0}to{transform:none;opacity:1}}
 </style>
 </head>
 <body>
+<div id="splash">
+  <svg class="logo" viewBox="0 0 120 120" aria-hidden="true">
+    <defs><linearGradient id="vg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9b7fd6"/><stop offset="1" stop-color="#5b3fa8"/></linearGradient></defs>
+    <circle cx="60" cy="60" r="56" fill="url(#vg)"/>
+    <circle cx="82" cy="36" r="9" fill="#fff6c8"/><circle cx="86" cy="33" r="8" fill="#7c5cc4"/>
+    <path d="M16 74 L40 50 L60 78 L80 50 L104 74 L104 92 Q60 112 16 92 Z" fill="#fff8ef"/>
+    <path d="M40 50 L60 78 L80 50" fill="none" stroke="#f4a259" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg>
+  <div class="name">VALEY</div><div class="sub">STUDIO</div>
+</div>
 <div id="stage">
   <canvas id="c"></canvas>
   <div id="hud" class="hide">
@@ -66,28 +101,30 @@ option{color:#2b2140;background:#fff}
   </div>
   <div id="hint" class="hide"></div>
   <div id="tapHint" class="hide"></div>
+  <div id="toast" class="hide"></div>
   <div id="menu">
     <div class="top"><button class="btn round" id="gear2"></button></div>
-    <h1 id="menuTitle">Catnap</h1>
+    <h1 id="menuTitle">Snoozeline</h1>
     <button class="btn main" id="continue"></button>
     <div id="levelList"></div>
+    <div id="by">by VALEY STUDIO</div>
   </div>
   <div id="win" class="modal hide"><div class="card"><div id="winstars"></div><h2 id="winTitle"></h2>
     <div class="row"><button class="btn round" id="menu2"></button><button class="btn round" id="retry3x" style="display:none"></button><button class="btn main" id="nextBtn"></button><button class="btn" id="retry3"></button></div></div></div>
   <div id="fail" class="modal hide"><div class="card"><h2 id="failTitle"></h2>
     <div class="row"><button class="btn round" id="menu3"></button><button class="btn main" id="retry2"></button></div>
-    <div class="row"><button class="btn" id="skipBtn"></button></div></div></div>
+    <div class="row"><button class="btn" id="hintBtn"></button><button class="btn" id="skipBtn"></button></div></div></div>
   <div id="settings" class="modal hide"><div class="card set"><h2 id="setTitle"></h2>
     <div class="r" id="sndRow"></div><div class="r" id="musRow"></div>
     <div style="text-align:left;font-weight:600;margin:.8em 0 .3em" id="langLbl"></div><select id="langSel"></select>
     <div class="row"><button class="btn round" id="closeSet"></button></div></div></div>
 </div>
-<script src="playgama-bridge.js"></script>
 <script src="matter.min.js"></script>
 <script src="src/sim.js"></script>
 <script src="src/levels.js"></script>
 <script src="src/i18n.js"></script>
 <script src="src/platform.js"></script>
+<script src="src/art.js"></script>
 <script src="src/game.js"></script>
 </body>
 </html>

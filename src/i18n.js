@@ -1,7 +1,7 @@
 /* UI strings. English is the default and fallback. Language is taken from the platform (Bridge). */
 window.I18N = {
   en: {
-    title: 'Catnap', level: 'Level {n}', levels: 'Levels', settings: 'Settings', retry: 'Retry', next: 'Next level',
+    title: 'Snoozeline', level: 'Level {n}', levels: 'Levels', settings: 'Settings', retry: 'Retry', next: 'Next level',
     win: 'Purr-fect!', fail: 'The cat woke up!', skipAd: 'Skip level (watch an ad)', sound: 'Sound', music: 'Music',
     language: 'Language', close: 'Close', ink: 'Ink', locked: 'Locked', stars: 'Stars', again: 'Play again',
     hint1: 'Draw a shield above the sleeping cat!', hint2: 'Ink is limited. Draw smart!',
@@ -12,7 +12,7 @@ window.I18N = {
     the_end: 'You protected every nap!', thanks: 'More levels are coming soon.', tapToDraw: 'Draw with your finger or mouse'
   },
   ru: {
-    title: 'Catnap', level: 'Уровень {n}', levels: 'Уровни', settings: 'Настройки', retry: 'Заново', next: 'Дальше',
+    title: 'Snoozeline', level: 'Уровень {n}', levels: 'Уровни', settings: 'Настройки', retry: 'Заново', next: 'Дальше',
     win: 'Мур-р-рфектно!', fail: 'Кот проснулся!', skipAd: 'Пропустить уровень (реклама)', sound: 'Звуки', music: 'Музыка',
     language: 'Язык', close: 'Закрыть', ink: 'Чернила', locked: 'Закрыто', stars: 'Звёзды', again: 'Играть ещё',
     hint1: 'Нарисуй защиту над спящим котом!', hint2: 'Чернил мало. Рисуй с умом!',
@@ -23,7 +23,7 @@ window.I18N = {
     the_end: 'Все сны защищены!', thanks: 'Скоро появятся новые уровни.', tapToDraw: 'Рисуй пальцем или мышкой'
   },
   de: {
-    title: 'Catnap', level: 'Level {n}', levels: 'Level', settings: 'Einstellungen', retry: 'Nochmal', next: 'Nächstes Level',
+    title: 'Snoozeline', level: 'Level {n}', levels: 'Level', settings: 'Einstellungen', retry: 'Nochmal', next: 'Nächstes Level',
     win: 'Schnurr-fekt!', fail: 'Die Katze ist aufgewacht!', skipAd: 'Level überspringen (Werbung)', sound: 'Ton', music: 'Musik',
     language: 'Sprache', close: 'Schließen', ink: 'Tinte', locked: 'Gesperrt', stars: 'Sterne', again: 'Nochmal spielen',
     hint1: 'Zeichne einen Schutz über der schlafenden Katze!', hint2: 'Die Tinte ist begrenzt. Zeichne klug!',
@@ -34,7 +34,7 @@ window.I18N = {
     the_end: 'Alle Nickerchen sind sicher!', thanks: 'Bald kommen weitere Level.', tapToDraw: 'Mit Finger oder Maus zeichnen'
   },
   es: {
-    title: 'Catnap', level: 'Nivel {n}', levels: 'Niveles', settings: 'Ajustes', retry: 'Reintentar', next: 'Siguiente nivel',
+    title: 'Snoozeline', level: 'Nivel {n}', levels: 'Niveles', settings: 'Ajustes', retry: 'Reintentar', next: 'Siguiente nivel',
     win: '¡Purr-fecto!', fail: '¡El gato se despertó!', skipAd: 'Saltar nivel (ver anuncio)', sound: 'Sonido', music: 'Música',
     language: 'Idioma', close: 'Cerrar', ink: 'Tinta', locked: 'Bloqueado', stars: 'Estrellas', again: 'Jugar de nuevo',
     hint1: '¡Dibuja un escudo sobre el gato dormido!', hint2: 'La tinta es limitada. ¡Dibuja con cabeza!',
@@ -45,7 +45,7 @@ window.I18N = {
     the_end: '¡Protegiste todas las siestas!', thanks: 'Pronto habrá más niveles.', tapToDraw: 'Dibuja con el dedo o el ratón'
   },
   fr: {
-    title: 'Catnap', level: 'Niveau {n}', levels: 'Niveaux', settings: 'Réglages', retry: 'Réessayer', next: 'Niveau suivant',
+    title: 'Snoozeline', level: 'Niveau {n}', levels: 'Niveaux', settings: 'Réglages', retry: 'Réessayer', next: 'Niveau suivant',
     win: 'Ronron-fait !', fail: 'Le chat s’est réveillé !', skipAd: 'Passer le niveau (publicité)', sound: 'Son', music: 'Musique',
     language: 'Langue', close: 'Fermer', ink: 'Encre', locked: 'Verrouillé', stars: 'Étoiles', again: 'Rejouer',
     hint1: 'Dessine un bouclier au-dessus du chat endormi !', hint2: 'L’encre est limitée. Dessine malin !',
@@ -56,7 +56,7 @@ window.I18N = {
     the_end: 'Toutes les siestes sont protégées !', thanks: 'D’autres niveaux arrivent bientôt.', tapToDraw: 'Dessine au doigt ou à la souris'
   },
   pt: {
-    title: 'Catnap', level: 'Nível {n}', levels: 'Níveis', settings: 'Definições', retry: 'Repetir', next: 'Próximo nível',
+    title: 'Snoozeline', level: 'Nível {n}', levels: 'Níveis', settings: 'Definições', retry: 'Repetir', next: 'Próximo nível',
     win: 'Purr-feito!', fail: 'O gato acordou!', skipAd: 'Saltar nível (ver anúncio)', sound: 'Som', music: 'Música',
     language: 'Idioma', close: 'Fechar', ink: 'Tinta', locked: 'Bloqueado', stars: 'Estrelas', again: 'Jogar de novo',
     hint1: 'Desenha um escudo sobre o gato a dormir!', hint2: 'A tinta é limitada. Desenha com jeito!',
@@ -67,7 +67,7 @@ window.I18N = {
     the_end: 'Protegeste todas as sestas!', thanks: 'Mais níveis em breve.', tapToDraw: 'Desenha com o dedo ou o rato'
   },
   tr: {
-    title: 'Catnap', level: 'Seviye {n}', levels: 'Seviyeler', settings: 'Ayarlar', retry: 'Tekrar', next: 'Sonraki seviye',
+    title: 'Snoozeline', level: 'Seviye {n}', levels: 'Seviyeler', settings: 'Ayarlar', retry: 'Tekrar', next: 'Sonraki seviye',
     win: 'Mırıl mırıl!', fail: 'Kedi uyandı!', skipAd: 'Seviyeyi geç (reklam izle)', sound: 'Ses', music: 'Müzik',
     language: 'Dil', close: 'Kapat', ink: 'Mürekkep', locked: 'Kilitli', stars: 'Yıldız', again: 'Tekrar oyna',
     hint1: 'Uyuyan kedinin üstüne bir kalkan çiz!', hint2: 'Mürekkep sınırlı. Akıllıca çiz!',
@@ -78,7 +78,7 @@ window.I18N = {
     the_end: 'Tüm şekerlemeleri korudun!', thanks: 'Yakında yeni seviyeler gelecek.', tapToDraw: 'Parmağın veya fare ile çiz'
   },
   id: {
-    title: 'Catnap', level: 'Level {n}', levels: 'Level', settings: 'Pengaturan', retry: 'Ulangi', next: 'Level berikutnya',
+    title: 'Snoozeline', level: 'Level {n}', levels: 'Level', settings: 'Pengaturan', retry: 'Ulangi', next: 'Level berikutnya',
     win: 'Sempurna!', fail: 'Kucingnya terbangun!', skipAd: 'Lewati level (tonton iklan)', sound: 'Suara', music: 'Musik',
     language: 'Bahasa', close: 'Tutup', ink: 'Tinta', locked: 'Terkunci', stars: 'Bintang', again: 'Main lagi',
     hint1: 'Gambar perisai di atas kucing yang tidur!', hint2: 'Tinta terbatas. Gambar dengan cerdik!',
@@ -89,7 +89,7 @@ window.I18N = {
     the_end: 'Semua tidur siang terlindungi!', thanks: 'Level baru segera hadir.', tapToDraw: 'Gambar dengan jari atau mouse'
   },
   hi: {
-    title: 'Catnap', level: 'लेवल {n}', levels: 'लेवल', settings: 'सेटिंग्स', retry: 'फिर से', next: 'अगला लेवल',
+    title: 'Snoozeline', level: 'लेवल {n}', levels: 'लेवल', settings: 'सेटिंग्स', retry: 'फिर से', next: 'अगला लेवल',
     win: 'शानदार!', fail: 'बिल्ली जाग गई!', skipAd: 'लेवल छोड़ें (विज्ञापन देखें)', sound: 'आवाज़', music: 'संगीत',
     language: 'भाषा', close: 'बंद करें', ink: 'स्याही', locked: 'बंद', stars: 'सितारे', again: 'फिर खेलें',
     hint1: 'सोती हुई बिल्ली के ऊपर ढाल बनाओ!', hint2: 'स्याही सीमित है। सोच-समझकर बनाओ!',
@@ -101,3 +101,18 @@ window.I18N = {
   }
 };
 window.LANG_NAMES = { en: 'English', ru: 'Русский', de: 'Deutsch', es: 'Español', fr: 'Français', pt: 'Português', tr: 'Türkçe', id: 'Bahasa Indonesia', hi: 'हिन्दी' };
+/* v2 strings: shelter rule, no-draw zone, hint ad */
+(function (X) {
+  var add = {
+    en: { hint1: 'Draw a shelter over the cat. Lines fall, so stand them on the floor!', hintCat: 'A line lying on the cat passes every hit to it!', notOnCat: 'Not on the cat!', hintAd: 'Show a hint (ad)' },
+    ru: { hint1: 'Нарисуй домик над котом. Линии падают — ставь их на пол!', hintCat: 'Линия, лежащая на коте, передаёт ему каждый удар!', notOnCat: 'Не на коте!', hintAd: 'Подсказка (реклама)' },
+    de: { hint1: 'Zeichne ein Dach über die Katze. Linien fallen – stell sie auf den Boden!', hintCat: 'Eine Linie auf der Katze gibt jeden Treffer weiter!', notOnCat: 'Nicht auf die Katze!', hintAd: 'Tipp zeigen (Werbung)' },
+    es: { hint1: '¡Dibuja un refugio sobre el gato! Las líneas caen: apóyalas en el suelo.', hintCat: 'Una línea apoyada en el gato le transmite cada golpe.', notOnCat: '¡No sobre el gato!', hintAd: 'Ver pista (anuncio)' },
+    fr: { hint1: 'Dessine un abri au-dessus du chat. Les traits tombent : pose-les au sol !', hintCat: 'Un trait posé sur le chat lui transmet chaque choc !', notOnCat: 'Pas sur le chat !', hintAd: 'Voir un indice (pub)' },
+    pt: { hint1: 'Desenha um abrigo sobre o gato. As linhas caem: apoia-as no chão!', hintCat: 'Uma linha encostada ao gato passa-lhe cada pancada!', notOnCat: 'Não no gato!', hintAd: 'Ver dica (anúncio)' },
+    tr: { hint1: 'Kedinin üstüne bir sığınak çiz. Çizgiler düşer, onları yere dayat!', hintCat: 'Kedinin üstünde yatan çizgi her darbeyi ona iletir!', notOnCat: 'Kedinin üstüne değil!', hintAd: 'İpucu göster (reklam)' },
+    id: { hint1: 'Gambar tempat berlindung di atas kucing. Garis akan jatuh, jadi tumpukan di lantai!', hintCat: 'Garis yang menempel di kucing meneruskan setiap benturan!', notOnCat: 'Jangan di atas kucing!', hintAd: 'Lihat petunjuk (iklan)' },
+    hi: { hint1: 'बिल्ली के ऊपर एक छत बनाओ। लाइनें गिरती हैं, उन्हें फ़र्श पर टिकाओ!', hintCat: 'बिल्ली पर पड़ी लाइन हर चोट उस तक पहुँचाती है!', notOnCat: 'बिल्ली पर नहीं!', hintAd: 'संकेत देखें (विज्ञापन)' }
+  };
+  for (var k in add) if (X[k]) for (var s in add[k]) X[k][s] = add[k][s];
+})(window.I18N);

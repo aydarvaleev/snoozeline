@@ -19,6 +19,7 @@
         P.audio = b.platform.isAudioEnabled !== false;
         P.rewardedSupported = !!b.advertisement.isRewardedSupported;
         P.interstitialSupported = !!b.advertisement.isInterstitialSupported;
+        if (b.advertisement.interstitialState === 'opened' || b.advertisement.rewardedState === 'opened') P.paused = true;
         b.platform.on(b.EVENT_NAME.AUDIO_STATE_CHANGED, function (v) { P.audio = v !== false; P.onAudio(P.audio); });
         b.platform.on(b.EVENT_NAME.PAUSE_STATE_CHANGED, function (v) { P.paused = !!v; P.onPause(P.paused); });
         b.advertisement.on(b.EVENT_NAME.REWARDED_STATE_CHANGED, function (state) {
