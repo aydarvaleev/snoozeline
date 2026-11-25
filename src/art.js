@@ -281,6 +281,67 @@
     ctx.restore();
   };
 
+  /* ---------------- furniture & stairs (geometry comes from CatSim.furnitureParts) ---------------- */
+  var WOOD = ['#b07a4f', '#8a6a52', '#a8774a', '#9c7a55', '#8e5f8a'];
+  var FABRIC = ['#e98f6b', '#6f86b8', '#7fb069', '#d9a441', '#c770a8'];
+  function shade(hex, k) {
+    var n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    var f = function (v) { return Math.max(0, Math.min(255, Math.round(v * k))); };
+    return 'rgb(' + f(r) + ',' + f(g) + ',' + f(b) + ')';
+  }
+  function slab(ctx, q, col, r) {
+    ctx.fillStyle = col; rr(ctx, q.x - q.w / 2, q.y - q.h / 2, q.w, q.h, r == null ? 3 : r); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(q.x - q.w / 2 + 2, q.y - q.h / 2 + 1, q.w - 4, Math.min(3, q.h / 3));
+  }
+  A.furniture = function (ctx, f, wi) {
+    var S = window.CatSim, parts = S.furnitureParts(f), wood = WOOD[wi] || WOOD[0], fab = FABRIC[wi] || FABRIC[0], i;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,.12)';
+    parts.forEach(function (q) { if (q.y + q.h / 2 > 540 && f.k !== 'wall') { ctx.beginPath(); ctx.ellipse(q.x, 549, q.w / 2 + 4, 4, 0, 0, Math.PI * 2); ctx.fill(); } });
+    if (f.k === 'nightstand') {
+      var n = parts[0]; slab(ctx, n, wood, 4);
+      ctx.fillStyle = shade(wood, 0.8);
+      ctx.fillRect(n.x - n.w / 2 - 3, n.y - n.h / 2, n.w + 6, 8);
+      for (i = 0; i < 2; i++) {
+        var dy = n.y - n.h / 2 + 22 + i * 40;
+        ctx.strokeStyle = shade(wood, 0.7); ctx.lineWidth = 2; ctx.strokeRect(n.x - n.w / 2 + 10, dy, n.w - 20, 30);
+        ctx.fillStyle = '#f2d39b'; ctx.beginPath(); ctx.arc(n.x, dy + 15, 3.5, 0, Math.PI * 2); ctx.fill();
+      }
+    } else if (f.k === 'sofa') {
+      var seat = parts[0], aL = parts[1], aR = parts[2];
+      // backrest (decor only, behind the cat)
+      ctx.fillStyle = shade(fab, 0.85); rr(ctx, seat.x - seat.w / 2 + 14, seat.y - seat.h / 2 - 58, seat.w - 28, 70, 14); ctx.fill();
+      slab(ctx, seat, fab, 10);
+      ctx.fillStyle = shade(fab, 1.12); rr(ctx, seat.x - seat.w / 2 + 24, seat.y - seat.h / 2 - 2, seat.w / 2 - 26, 18, 8); ctx.fill();
+      rr(ctx, seat.x + 2, seat.y - seat.h / 2 - 2, seat.w / 2 - 26, 18, 8); ctx.fill();
+      slab(ctx, aL, shade(fab, 0.92), 10); slab(ctx, aR, shade(fab, 0.92), 10);
+      ctx.fillStyle = shade(wood, 0.7); ctx.fillRect(seat.x - seat.w / 2 + 10, 540, 8, 8); ctx.fillRect(seat.x + seat.w / 2 - 18, 540, 8, 8);
+    } else if (f.k === 'chair') {
+      parts.forEach(function (q, k) { slab(ctx, q, k === 0 ? wood : shade(wood, 0.85), k === 0 ? 3 : 2); });
+      var bk = parts[3]; ctx.fillStyle = shade(wood, 0.85);
+      ctx.fillRect(bk.x - (f.side || 1) * 4 - 1, bk.y - bk.h / 2 + 8, 2, bk.h - 16);
+      ctx.fillStyle = fab; rr(ctx, parts[0].x - parts[0].w / 2 + 4, parts[0].y - parts[0].h / 2 - 5, parts[0].w - 8, 7, 3); ctx.fill();
+    } else if (f.k === 'table') {
+      slab(ctx, parts[1], shade(wood, 0.85), 2); slab(ctx, parts[2], shade(wood, 0.85), 2);
+      slab(ctx, parts[0], wood, 3);
+      ctx.fillStyle = 'rgba(255,255,255,.55)';
+      ctx.beginPath(); ctx.moveTo(parts[0].x - 50, parts[0].y + 7); ctx.lineTo(parts[0].x + 50, parts[0].y + 7); ctx.lineTo(parts[0].x + 40, parts[0].y + 26); ctx.lineTo(parts[0].x - 40, parts[0].y + 26); ctx.fill();
+    } else if (f.k === 'wall') {
+      var wq = parts[0]; ctx.fillStyle = shade(wood, 0.75); ctx.fillRect(wq.x - wq.w / 2, -400, wq.w, wq.y + wq.h / 2 + 400);
+      ctx.fillStyle = 'rgba(0,0,0,.15)';
+      for (var y = 0; y < 548; y += 26) ctx.fillRect(wq.x - wq.w / 2, y, wq.w, 2);
+      ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.fillRect((f.side || -1) < 0 ? wq.x + wq.w / 2 - 3 : wq.x - wq.w / 2, -400, 3, 948);
+    } else if (f.k === 'stairs') {
+      parts.forEach(function (q) {
+        slab(ctx, q, shade(wood, 0.95), 2);
+        ctx.fillStyle = shade(wood, 0.7); ctx.fillRect(q.x - q.w / 2, q.y - q.h / 2, q.w, 6);
+        ctx.fillStyle = fab; ctx.fillRect(q.x - q.w / 2 + 10, q.y - q.h / 2, q.w - 20, 4);
+        ctx.strokeStyle = 'rgba(0,0,0,.12)'; ctx.lineWidth = 1; ctx.strokeRect(q.x - q.w / 2 + 0.5, q.y - q.h / 2 + 0.5, q.w - 1, q.h - 1);
+      });
+    }
+    ctx.restore();
+  };
+
   // ink line: shadow + body + highlight
   A.ink = function (ctx, pts, live, col) {
     if (pts.length < 2) return;

@@ -95,7 +95,7 @@
     cur = i; sim = new S.Sim(LEVELS[i]); particles = []; drawing = null; hurtFlash = 0; catHurt = 0; catHappy = 0; screen = 'play';
     if (hintFor !== i) hintFor = -1;
     hideModals(); $('hud').classList.remove('hide'); $('menu').classList.add('hide'); updateHud();
-    var hint = $('hint'); var k = i === 0 ? 'hint1' : i === 1 ? 'hint2' : i === 2 ? 'hintCat' : i === 4 ? 'hint3' : null;
+    var hint = $('hint'); var k = ['hint1', 'hint2', 'hStand', 'hSofa', 'hChair', 'hTable', 'hWall', 'hStairs', 'hintCat'][i] || null;
     if (i % 12 === 0 && i > 0) k = 'wh' + (i / 12);
     if (i === 12 + 0) k = 'wh1';
     hint.textContent = k ? t(k) : ''; hint.classList.toggle('hide', !k); $('tapHint').classList.toggle('hide', i !== 0);
@@ -205,6 +205,7 @@
     audioInit(); applyAudio(); canvas.setPointerCapture(e.pointerId);
     var p = pt(e);
     if (sim.inCatZone(p.x, p.y, 6)) { toast(t('notOnCat')); return; }
+    if (sim.inSolid(p.x, p.y)) return;
     drawing = { pts: [p], len: 0 }; $('hint').classList.add('hide'); $('tapHint').classList.add('hide');
   });
   canvas.addEventListener('pointermove', function (e) {
@@ -217,6 +218,7 @@
       if (d > left) { if (left > 1) { var k = left / d; p = { x: a.x + (p.x - a.x) * k, y: a.y + (p.y - a.y) * k }; d = left; } else { finishStroke(); return; } }
       p.y = Math.min(p.y, FLOOR - 4);
       if (sim.inCatZone(p.x, p.y, 6)) { toast(t('notOnCat')); finishStroke(); return; }
+      if (sim.inSolid(p.x, p.y)) continue; // skip points inside furniture
       drawing.pts.push(p); drawing.len += d;
       if (Math.random() < 0.35) sfx('draw', 0.5);
       if (d >= left) { finishStroke(); return; }
@@ -240,7 +242,8 @@
     Art.background(ctx, wi, -vox, -voy, W + vox, H + voy, W, FLOOR, scale * dpr);
     if (shake > 0) { ctx.save(); ctx.translate((Math.random() - .5) * shake, (Math.random() - .5) * shake); }
     if (sim) {
-      sim.statics.forEach(function (b) { Art.statics(ctx, b.def, wi); });
+      (sim.level.furniture || []).forEach(function (f) { Art.furniture(ctx, f, wi); });
+      sim.statics.forEach(function (b) { if (b.def) Art.statics(ctx, b.def, wi); });
       var c = sim.level.cat;
       Art.cat(ctx, c.x, c.y, { t: tt, hurt: catHurt, awake: sim.sleep <= 0, happy: catHappy });
       if (sim.level.hint && (hintFor === cur || (cur === 0 && !sim.strokes.length && !drawing))) Art.ghost(ctx, sim.level.hint, tt);

@@ -20,7 +20,7 @@ if (levels.length !== 60) console.warn('warning: ' + levels.length + ' levels me
 // chaos is the most chaotic physics: the cat sleeps deeper there (4 hits) so slightly-off drawings still work
 levels.forEach(l => { if (l.world === 4) l.sleep = 4; });
 const game = levels.map(l => ({
-  id: l.id, world: l.world, seed: l.seed, sleep: l.sleep, cat: l.cat, statics: l.statics,
+  id: l.id, world: l.world, seed: l.seed, sleep: l.sleep, cat: l.cat, statics: l.statics, furniture: l.furniture || [],
   emit: l.emit, // full precision: the physics is chaotic, rounding changes outcomes
   time: l.time, ink: l.ink, minInk: l.minInk, hint: l.hint || l.solutionPts
 }));

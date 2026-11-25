@@ -46,7 +46,7 @@
     var p = resample(points, 9);
     if (p.length < 2) return null;
     var parts = [], len = 0, i;
-    var o = { friction: 0.8, frictionStatic: 1, restitution: 0.05, density: 0.004,
+    var o = { friction: 0.8, frictionStatic: 1, restitution: 0.05, density: 0.012,
       collisionFilter: { category: CAT_BIT, mask: 0xFFFF } };
     for (i = 0; i < p.length - 1; i++) {
       var a = p[i], b = p[i + 1], l = Math.hypot(b.x - a.x, b.y - a.y);
@@ -60,6 +60,57 @@
     body.inkLen = len;
     body.local = p.map(function (q) { return { x: q.x - body.position.x, y: q.y - body.position.y }; });
     return body;
+  }
+
+  /* Furniture: one record {k, x, side} -> solid rectangles (shared by sim, generator and art).
+     top(f) is the surface the cat sleeps on. Side view, y grows downwards, FLOOR is the floor line. */
+  var FURN = {
+    nightstand: { w: 84, h: 112 },
+    sofa: { w: 152, seat: 60, arm: 24, armH: 106 },
+    chair: { w: 84, seat: 80, back: 130 },
+    table: { w: 196, h: 122 },
+    wall: { w: 22 },
+    stairs: { n: 4, sw: 84, rise: 40 }
+  };
+  function furnitureParts(f) {
+    var d = FURN[f.k], x = f.x, out = [];
+    if (f.k === 'nightstand') out.push({ x: x, y: FLOOR - d.h / 2, w: d.w, h: d.h });
+    else if (f.k === 'sofa') {
+      out.push({ x: x, y: FLOOR - d.seat / 2, w: d.w, h: d.seat });
+      out.push({ x: x - d.w / 2 + d.arm / 2, y: FLOOR - d.armH / 2, w: d.arm, h: d.armH });
+      out.push({ x: x + d.w / 2 - d.arm / 2, y: FLOOR - d.armH / 2, w: d.arm, h: d.armH });
+    } else if (f.k === 'chair') {
+      var sd = f.side || 1;
+      out.push({ x: x, y: FLOOR - d.seat + 6, w: d.w, h: 12 });
+      out.push({ x: x - d.w / 2 + 6, y: FLOOR - (d.seat - 12) / 2, w: 8, h: d.seat - 12 });
+      out.push({ x: x + d.w / 2 - 6, y: FLOOR - (d.seat - 12) / 2, w: 8, h: d.seat - 12 });
+      out.push({ x: x + sd * (d.w / 2 - 5), y: FLOOR - d.seat - d.back / 2, w: 10, h: d.back });
+    } else if (f.k === 'table') {
+      out.push({ x: x, y: FLOOR - d.h + 7, w: d.w, h: 14 });
+      out.push({ x: x - d.w / 2 + 10, y: FLOOR - (d.h - 14) / 2, w: 12, h: d.h - 14 });
+      out.push({ x: x + d.w / 2 - 10, y: FLOOR - (d.h - 14) / 2, w: 12, h: d.h - 14 });
+    } else if (f.k === 'wall') {
+      out.push({ x: (f.side || -1) < 0 ? d.w / 2 : W - d.w / 2, y: FLOOR / 2 - 20, w: d.w, h: FLOOR + 40 });
+    } else if (f.k === 'stairs') {
+      // highest step at the given side; step i counted from that side
+      var sd2 = f.side || -1;
+      for (var i = 0; i < d.n; i++) {
+        var hh = (d.n - i) * d.rise, cx = sd2 < 0 ? d.sw * (i + 0.5) : W - d.sw * (i + 0.5);
+        out.push({ x: cx, y: FLOOR - hh / 2, w: d.sw, h: hh });
+      }
+    }
+    return out;
+  }
+  // where a cat sleeps on a piece of furniture: {x, y}
+  function furnitureSpot(f) {
+    var d = FURN[f.k];
+    if (f.k === 'nightstand') return { x: f.x, y: FLOOR - d.h };
+    if (f.k === 'sofa') return { x: f.x, y: FLOOR - d.seat };
+    if (f.k === 'chair') return { x: f.x - (f.side || 1) * 4, y: FLOOR - d.seat };
+    if (f.k === 'table') return f.under ? { x: f.x, y: FLOOR } : { x: f.x, y: FLOOR - d.h };
+    if (f.k === 'wall') return { x: (f.side || -1) < 0 ? d.w + 46 : W - d.w - 46, y: FLOOR };
+    if (f.k === 'stairs') { var st = f.step || 1, sd = f.side || -1; return { x: sd < 0 ? d.sw * (st + 0.5) : W - d.sw * (st + 0.5), y: FLOOR - (d.n - st) * d.rise }; }
+    return { x: f.x, y: FLOOR };
   }
 
   function expandEvents(level, r) {
@@ -102,13 +153,20 @@
     this.evIdx = 0; this.beeRand = rng((level.seed || 1) * 31 + 5);
     var self = this;
 
-    var floor = M.Bodies.rectangle(W / 2, FLOOR + 40, 2400, 80, { isStatic: true, label: 'floor', friction: 0.9,
+    var floor = M.Bodies.rectangle(W / 2, FLOOR + 40, 2400, 80, { isStatic: true, label: 'floor', friction: 1, frictionStatic: 2,
       collisionFilter: { category: CAT_BIT, mask: 0xFFFF } });
     M.Composite.add(this.world, floor);
     (level.statics || []).forEach(function (s) {
       var b = M.Bodies.rectangle(s.x, s.y, s.w, s.h, { isStatic: true, angle: s.a || 0, label: 'static', friction: 0.5,
         collisionFilter: { category: CAT_BIT, mask: 0xFFFF } });
       b.def = s; self.statics.push(b); M.Composite.add(self.world, b);
+    });
+    (level.furniture || []).forEach(function (f) {
+      furnitureParts(f).forEach(function (q) {
+        var b = M.Bodies.rectangle(q.x, q.y, q.w, q.h, { isStatic: true, label: 'static', friction: 1, frictionStatic: 2,
+          collisionFilter: { category: CAT_BIT, mask: 0xFFFF } });
+        b.furn = f.k; self.statics.push(b); M.Composite.add(self.world, b);
+      });
     });
     var c = level.cat;
     this.cat = M.Bodies.rectangle(c.x, c.y - 15, 78, 30, { isStatic: true, label: 'cat', friction: 0.6, chamfer: { radius: 13 },
@@ -146,6 +204,11 @@
       if (c && c.collided && Math.abs(c.normal.y) > 0.7 && parts[i].position.y < this.cat.position.y) return true;
     }
     return false;
+  };
+
+  // is a point inside a solid (furniture, ramps, shelves)? lines drawn into solids would be shot out
+  Sim.prototype.inSolid = function (x, y) {
+    return M.Query.point(this.statics, { x: x, y: y }).length > 0;
   };
 
   // is a point inside the no-draw zone around the cat?
@@ -270,7 +333,7 @@
     return Math.min(s, this.hurts <= Math.max(1, L.bumps || 0) ? 3 : 2);
   };
 
-  var api = { Sim: Sim, rng: rng, resample: resample, pathLength: pathLength, strokeBody: strokeBody,
+  var api = { Sim: Sim, rng: rng, furnitureParts: furnitureParts, furnitureSpot: furnitureSpot, FURN: FURN, resample: resample, pathLength: pathLength, strokeBody: strokeBody,
     W: W, H: H, FLOOR: FLOOR, DT: DT, WET_MAX: WET_MAX, T: T };
   if (typeof module === 'object' && module.exports) module.exports = api; else root.CatSim = api;
 })(typeof window !== 'undefined' ? window : globalThis);

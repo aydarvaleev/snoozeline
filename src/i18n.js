@@ -116,3 +116,18 @@ window.LANG_NAMES = { en: 'English', ru: 'Русский', de: 'Deutsch', es: 'E
   };
   for (var k in add) if (X[k]) for (var s in add[k]) X[k][s] = add[k][s];
 })(window.I18N);
+/* v3 strings: furniture tutorial */
+(function (X) {
+  var add = {
+    en: { hStand: 'No room on the nightstand? Hang the shelter over its edges!', hSofa: 'Use the armrests as supports!', hChair: 'Lean your line on the backrest!', hTable: 'Balls roll across the table. Block their way!', hWall: 'The wall can hold your line too!', hStairs: 'Balls bounce down the stairs!' },
+    ru: { hStand: 'На тумбочке тесно? Повесь укрытие за её края!', hSofa: 'Опирайся на подлокотники!', hChair: 'Прислони линию к спинке стула!', hTable: 'Мячи катятся по столу. Перегороди им путь!', hWall: 'Стена тоже может держать линию!', hStairs: 'Мячи скачут вниз по ступенькам!' },
+    de: { hStand: 'Kein Platz auf dem Nachttisch? Häng den Schutz über die Kanten!', hSofa: 'Nutze die Armlehnen als Stütze!', hChair: 'Lehn deine Linie an die Rückenlehne!', hTable: 'Bälle rollen über den Tisch. Versperr ihnen den Weg!', hWall: 'Auch die Wand kann deine Linie halten!', hStairs: 'Bälle hüpfen die Treppe hinunter!' },
+    es: { hStand: '¿No hay sitio en la mesilla? ¡Cuelga el refugio por sus bordes!', hSofa: '¡Apóyate en los reposabrazos!', hChair: '¡Apoya tu línea en el respaldo!', hTable: 'Las pelotas ruedan por la mesa. ¡Córtales el paso!', hWall: '¡La pared también puede sostener tu línea!', hStairs: '¡Las pelotas bajan rebotando por la escalera!' },
+    fr: { hStand: 'Pas de place sur la table de nuit ? Accroche l’abri à ses bords !', hSofa: 'Appuie-toi sur les accoudoirs !', hChair: 'Appuie ton trait contre le dossier !', hTable: 'Les balles roulent sur la table. Barre-leur la route !', hWall: 'Le mur peut aussi tenir ton trait !', hStairs: 'Les balles rebondissent dans l’escalier !' },
+    pt: { hStand: 'Sem espaço na mesa de cabeceira? Pendura o abrigo nas bordas!', hSofa: 'Apoia-te nos braços do sofá!', hChair: 'Encosta a linha ao encosto da cadeira!', hTable: 'As bolas rolam pela mesa. Bloqueia-lhes o caminho!', hWall: 'A parede também pode segurar a linha!', hStairs: 'As bolas descem a saltar pelas escadas!' },
+    tr: { hStand: 'Komodinde yer yok mu? Sığınağı kenarlarından sarkıt!', hSofa: 'Kolçakları destek olarak kullan!', hChair: 'Çizgini sandalyenin arkalığına yasla!', hTable: 'Toplar masada yuvarlanıyor. Yollarını kes!', hWall: 'Duvar da çizgini tutabilir!', hStairs: 'Toplar merdivenden zıplayarak iniyor!' },
+    id: { hStand: 'Meja kecil terlalu sempit? Gantung pelindung di tepinya!', hSofa: 'Gunakan sandaran tangan sebagai penopang!', hChair: 'Sandarkan garismu ke sandaran kursi!', hTable: 'Bola menggelinding di meja. Halangi jalannya!', hWall: 'Dinding juga bisa menahan garismu!', hStairs: 'Bola memantul menuruni tangga!' },
+    hi: { hStand: 'साइड टेबल पर जगह नहीं? छत को उसके किनारों पर टिकाओ!', hSofa: 'सोफ़े के हत्थों का सहारा लो!', hChair: 'लाइन को कुर्सी की पीठ से टिकाओ!', hTable: 'गेंदें मेज़ पर लुढ़क रही हैं। उनका रास्ता रोको!', hWall: 'दीवार भी तुम्हारी लाइन थाम सकती है!', hStairs: 'गेंदें सीढ़ियों से उछलती आ रही हैं!' }
+  };
+  for (var k in add) if (X[k]) for (var s in add[k]) X[k][s] = add[k][s];
+})(window.I18N);

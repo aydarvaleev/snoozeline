@@ -26,7 +26,7 @@ const out = [];
 for (let i = FROM; i <= TO; i++) {
   if (IDS && !IDS.includes(i + 1)) continue;
   const lv = L[i];
-  const cands = G.shapes(lv.cat.x, lv.cat.y);
+  const cands = G.shapes(lv);
   let found = null;
   for (const maxHurts of [0, 1, Infinity]) {
     for (const c of cands) {

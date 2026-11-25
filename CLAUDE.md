@@ -23,6 +23,9 @@ HTML5 "draw to protect" physics puzzle (sleeping cat, limited ink). Owner: Aydar
 - Level 1 shows the hint ghost until the first stroke (onboarding). Rewarded `show_hint` shows it on any level after a fail; `skip_level` after 2 fails.
 - Interstitials: requested on every natural pause (Next / Retry / Menu from a result screen). No own counters — Bridge decides frequency.
 
+## Furniture (v3)
+Level field `furniture: [{k, x, side, step, under}]`; kinds nightstand, sofa, chair, table, wall, stairs. Geometry lives in sim.js (FURN, furnitureParts, furnitureSpot) and is shared by sim, generator (props/bridges from part corners) and art.js (A.furniture). Players cannot draw inside furniture (points are skipped). Ink is dense (0.012) and furniture/floor are grippy so lines can rest on supports. "Cat under the table" was dropped: the legs fence every threat off. Level time = last spawn + 1.9 s (pace() in gen.js), so there is no idle waiting.
+
 ## Levels
 Sim resets Matter's body ids per level (deterministic per engine). Chaos world: cat wakes on the 4th hit (sleep 4) because it is the most chaotic. Level field `bumps` = hits the reference hint takes; 3 stars allow max(1, bumps) hits.
 60 levels (5 worlds x 12): 0 bedroom (hand-authored tutorial specs, one idea per level), 1 attic (drips+wind+rollers), 2 garden (bees), 3 workshop (ramps throw balls at the cat; cat placed at the ramp's landing point), 4 chaos. Targets per world are in TARGET in gen.js; budget factor falls from ~2.6x (tutorial) to 1.4x (last level).

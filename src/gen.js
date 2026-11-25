@@ -15,13 +15,8 @@ const { Sim, rng, W, FLOOR } = S;
 function lerp(a, b, t) { return a + (b - a) * t; }
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
-// --- candidate solutions (single-stroke shields), relative to the cat -------------------------
-function shapes(cx, sy) {
-  const out = [];
-  const FAST = !!process.env.FAST;
-  const widths = FAST ? [70, 90, 120, 160, 210] : [50, 70, 90, 120, 160, 210, 260];
-  const heights = FAST ? [30, 45, 60, 80] : [30, 45, 60, 80, 105];
-  const offs = FAST ? [0, -25, 25] : [0, -25, 25, -50, 50];
+// --- candidate solutions (single-stroke shields) ---------------------------------------------------
+function baseShapes(cx, sy, widths, heights, offs, out) {
   for (const w of widths) for (const h of heights) for (const o of offs) {
     const x = cx + o;
     out.push({ n: 'roof', pts: [{ x: x - w / 2, y: sy - h }, { x: x + w / 2, y: sy - h }] });
@@ -33,7 +28,45 @@ function shapes(cx, sy) {
     out.push({ n: 'lean', pts: [{ x: x - w / 2, y: sy - h }, { x: x + w / 2, y: sy }] });
     out.push({ n: 'lean2', pts: [{ x: x - w / 2, y: sy }, { x: x + w / 2, y: sy - h }] });
   }
-  out.forEach(c => { c.ink = S.pathLength(S.resample(c.pts, 9)); });
+}
+// level-aware: cat-anchored shapes, plus tall floor-anchored shelters for raised cats, plus wall leans
+function shapes(level) {
+  const out = [], FAST = !!process.env.FAST, cx = level.cat.x, sy = level.cat.y;
+  baseShapes(cx, sy, FAST ? [70, 90, 120, 160, 210] : [50, 70, 90, 120, 160, 210, 260],
+    FAST ? [30, 45, 60, 80] : [30, 45, 60, 80, 105], FAST ? [0, -25, 25] : [0, -25, 25, -50, 50], out);
+  if (sy < FLOOR - 20) {
+    const lift = FLOOR - sy;
+    baseShapes(cx, FLOOR - 4, [130, 170, 220, 260], [lift + 40, lift + 60, lift + 85], [0, -30, 30], out);
+  }
+  (level.furniture || []).filter(f => f.k === 'wall').forEach(f => {
+    const wx = (f.side || -1) < 0 ? S.FURN.wall.w + 2 : W - S.FURN.wall.w - 2, dir = (f.side || -1) < 0 ? 1 : -1;
+    for (const w of [150, 190, 230, 270]) for (const h of [70, 95, 120, 150]) {
+      out.push({ n: 'wall-lean', pts: [{ x: wx, y: sy - h }, { x: wx + dir * w, y: sy - 4 }] });
+      out.push({ n: 'wall-roof', pts: [{ x: wx, y: sy - h }, { x: wx + dir * w, y: sy - h }, { x: wx + dir * w, y: sy - 4 }] });
+    }
+  });
+  // props and bridges: lines resting on the top corners of furniture parts that rise above the cat
+  const anchors = [];
+  (level.furniture || []).forEach(f => S.furnitureParts(f).forEach(q => {
+    const top = q.y - q.h / 2;
+    if (top < sy - 15 && top > 60) { anchors.push({ x: q.x - q.w / 2 + 2, y: top - 4 }); anchors.push({ x: q.x + q.w / 2 - 2, y: top - 4 }); }
+  }));
+  anchors.forEach(a => {
+    for (const dir of [-1, 1]) for (const dx of [50, 80, 110, 150, 200]) {
+      // start a little past the corner so the line hooks over it instead of balancing on the tip
+      const hook = { x: a.x - dir * 8, y: a.y - 5 };
+      out.push({ n: 'prop', pts: [hook, { x: a.x + dir * dx, y: FLOOR - 4 }] });
+      out.push({ n: 'prop', pts: [hook, { x: a.x + dir * dx * 1.6, y: FLOOR - 4 }] });
+      if (sy < FLOOR - 10) out.push({ n: 'prop', pts: [hook, { x: a.x + dir * dx, y: sy - 3 }] });
+    }
+    anchors.forEach(b => {
+      if (b.x > a.x + 40 && Math.abs(b.y - a.y) < 30) {
+        out.push({ n: 'bridge', pts: [{ x: a.x - 6, y: Math.min(a.y, b.y) - 2 }, { x: b.x + 6, y: Math.min(a.y, b.y) - 2 }] });
+        out.push({ n: 'bridge', pts: [{ x: a.x - 14, y: Math.min(a.y, b.y) - 2 }, { x: b.x + 14, y: Math.min(a.y, b.y) - 2 }] });
+      }
+    });
+  });
+  out.forEach(c => { c.pts = c.pts.map(p => ({ x: p.x, y: Math.min(p.y, FLOOR - 4) })); c.ink = S.pathLength(S.resample(c.pts, 9)); });
   out.sort((a, b) => a.ink - b.ink);
   return out;
 }
@@ -61,7 +94,7 @@ function isRobust(level, pts) {
 // cheapest ROBUST single-stroke solution (shape list is sorted by ink); clean = cat never hit
 function solve(level, maxInk, clean) {
   if (run(level, null).state !== 'failed') return { trivial: true };
-  const cands = shapes(level.cat.x, level.cat.y);
+  const cands = shapes(level);
   for (const want of clean ? [true] : [true, false]) {
     for (const c of cands) {
       if (c.ink > maxInk) break;
@@ -76,54 +109,77 @@ function solve(level, maxInk, clean) {
 
 // does any plain flat roof (the "lazy" answer) win within the budget?
 function roofWins(level, budget) {
-  const cands = shapes(level.cat.x, level.cat.y).filter(c => c.n === 'roof' && c.ink <= budget);
+  const cands = shapes(level).filter(c => c.n === 'roof' && c.ink <= budget);
   for (const c of cands) if (run(probeOf(level), [c.pts]).state === 'won') return true;
   return false;
 }
 
-// --- tutorial (world 0, levels 1-12): hand-authored, one idea per level --------------------------
+// --- emitters ----------------------------------------------------------------------------------------
 const C = 180; // screen centre
 const fall = (k, n, dt, t0, x0, x1, extra) => Object.assign({ k, n, dt, t0, x0, x1, jit: 0.25 }, extra || {});
 const rollIn = (side, n, dt, t0, speed, cy) => {
   const sx = side < 0 ? -30 : W + 30;
   return { k: 'ball', n, dt, t0, x0: sx, x1: sx, y: (cy || FLOOR) - 14, vx: -side * speed, vy: 0, jit: 0.2 };
 };
+// thrown in an arc from the screen side towards a raised cat
+const toss = (side, n, dt, t0, cy, speed, k) => {
+  const sx = side < 0 ? -25 : W + 25;
+  return { k: k || 'ball', n, dt, t0, x0: sx, x1: sx, y: cy - 70, vx: -side * (speed || 4.2), vy: -2.2, jit: 0.25 };
+};
+// balls released at the top of the stairs, bouncing down the steps
+const stairBalls = (f, n, dt, t0) => {
+  const d = S.FURN.stairs, sd = f.side || -1, top = FLOOR - d.n * d.rise;
+  const sx = sd < 0 ? 20 : W - 20;
+  return { k: 'ball', n, dt, t0, x0: sx, x1: sx, y: top - 20, vx: -sd * 1.6, vy: 0, jit: 0.2 };
+};
+const spot = f => S.furnitureSpot(f);
+
+// --- tutorial (world 0, levels 1-12): hand-authored, one idea per level -------------------------------
 const TUTORIAL = [
-  // 1. three slow balls straight onto the cat — any line above works
-  { cat: 180, time: 6, emit: [fall('ball', 3, 1.4, 0.6, C - 10, C + 10)] },
-  // 2. balls and boxes, a bit wider — ink limit is introduced
-  { cat: 180, time: 7, emit: [fall('ball', 3, 1.3, 0.6, C - 30, C + 30), fall('pot', 2, 2.0, 1.2, C - 25, C + 25)] },
-  // 3. cat off-centre, more stuff
-  { cat: 120, time: 8, emit: [fall('ball', 4, 1.0, 0.5, 70, 170), fall('pot', 2, 2.2, 1.0, 80, 160)] },
-  // 4. wide rain of balls — the roof must be wider
-  { cat: 230, time: 8, emit: [fall('ball', 6, 0.8, 0.5, 160, 300), fall('pot', 2, 2.4, 1.4, 180, 280)] },
-  // 5. NEW: balls roll in along the floor from the left — a flat roof is not enough, slant it down to the floor
-  { cat: 200, time: 8, emit: [rollIn(-1, 4, 1.3, 0.8, 4.0), fall('ball', 2, 2.0, 1.4, 185, 215)] },
-  // 6. same from the right, more from above
-  { cat: 150, time: 8, emit: [rollIn(1, 4, 1.3, 0.8, 4.0), fall('ball', 3, 1.6, 1.2, 120, 180)] },
-  // 7. rolls from both sides — tent / arch
-  { cat: 180, time: 8, emit: [rollIn(-1, 3, 1.5, 0.8, 4.0), rollIn(1, 3, 1.5, 1.5, 4.0), fall('pot', 2, 2.2, 1.0, 165, 195)] },
-  // 8. both sides + top
-  { cat: 170, time: 9, emit: [rollIn(-1, 3, 1.6, 1.0, 3.8), rollIn(1, 3, 1.6, 1.8, 3.8), fall('ball', 4, 1.2, 0.6, 120, 220)] },
-  // 9. heavy boxes from above, wide
-  { cat: 200, time: 9, emit: [fall('pot', 5, 1.1, 0.5, 120, 280), fall('ball', 4, 1.3, 1.0, 130, 270)] },
-  // 10. fast rollers + wide top
-  { cat: 140, time: 9.5, emit: [rollIn(1, 4, 1.2, 0.8, 4.6), fall('ball', 5, 1.0, 0.6, 60, 220), fall('pot', 2, 2.5, 1.6, 80, 200)] },
-  // 11. busy: both sides + wide top
-  { cat: 190, time: 10, emit: [rollIn(-1, 3, 1.5, 0.8, 4.2), rollIn(1, 3, 1.5, 1.4, 4.2), fall('ball', 5, 1.0, 0.6, 110, 270), fall('pot', 2, 2.6, 1.8, 130, 250)] },
-  // 12. final exam of the bedroom
-  { cat: 160, time: 10.5, emit: [rollIn(-1, 4, 1.3, 0.8, 4.4), rollIn(1, 4, 1.3, 1.3, 4.4), fall('ball', 6, 0.9, 0.5, 70, 250), fall('pot', 3, 2.0, 1.2, 90, 230)] }
+  // 1. floor: things fall onto the cat — make a little house
+  () => ({ furniture: [], cat: { x: 180, y: FLOOR }, emit: [fall('ball', 4, 1.1, 0.6, C - 20, C + 20), fall('pot', 2, 1.8, 1.2, C - 25, C + 25)] }),
+  // 2. floor: balls also roll in from the left
+  () => ({ furniture: [], cat: { x: 200, y: FLOOR }, emit: [rollIn(-1, 4, 1.1, 0.6, 4.0), fall('ball', 3, 1.4, 1.0, 175, 225)] }),
+  // 3. NEW nightstand: the cat sleeps high up, legs have nowhere to stand
+  () => { const f = { k: 'nightstand', x: 190 }; return { furniture: [f], cat: spot(f), emit: [fall('ball', 4, 1.0, 0.6, 150, 230), fall('pot', 3, 1.4, 1.0, 160, 220)] }; },
+  // 4. NEW sofa: bridge one line between the armrests
+  () => { const f = { k: 'sofa', x: 180 }; return { furniture: [f], cat: spot(f), emit: [fall('ball', 5, 0.9, 0.6, 110, 250), fall('pot', 3, 1.4, 1.0, 120, 240)] }; },
+  // 5. NEW chair with a backrest: lean a line against it, things are thrown from the open side
+  () => { const f = { k: 'chair', x: 200, side: 1 }; return { furniture: [f], cat: spot(f), emit: [toss(-1, 4, 1.1, 0.6, spot(f).y), fall('ball', 3, 1.3, 1.0, 170, 230)] }; },
+  // 6. NEW on the table: balls land on the far end and roll across the tabletop at the cat
+  () => { const f = { k: 'table', x: 170 }; const sp = spot(f); return { furniture: [f], cat: { x: sp.x - 40, y: sp.y }, emit: [fall('ball', 5, 0.9, 0.5, 235, 250, { vx: -2.6 }), fall('ball', 3, 1.3, 1.0, sp.x - 70, sp.x - 10)] }; },
+  // 7. NEW next to a wall: one slanted line from the wall is enough
+  () => { const f = { k: 'wall', side: -1 }; return { furniture: [f], cat: spot(f), emit: [fall('ball', 5, 0.9, 0.6, 30, 120), fall('pot', 3, 1.4, 1.0, 35, 110), toss(1, 2, 1.6, 1.6, FLOOR - 20, 3.6)] }; },
+  // 8. NEW stairs: balls bounce down the steps onto the cat
+  () => { const f = { k: 'stairs', side: -1, step: 2 }; return { furniture: [f], cat: spot(f), emit: [stairBalls(f, 5, 1.0, 0.6), fall('pot', 2, 1.8, 1.4, spot(f).x - 20, spot(f).x + 20)] }; },
+  // 9. on the table: thrown from both sides
+  () => { const f = { k: 'table', x: 180 }; return { furniture: [f], cat: spot(f), emit: [toss(-1, 3, 1.3, 0.6, spot(f).y), toss(1, 3, 1.3, 1.2, spot(f).y), fall('ball', 3, 1.4, 1.0, 150, 210)] }; },
+  // 10. sofa with throws from the side
+  () => { const f = { k: 'sofa', x: 170 }; return { furniture: [f], cat: spot(f), emit: [toss(1, 4, 1.0, 0.6, spot(f).y - 20, 4.6), fall('ball', 4, 1.0, 0.8, 90, 250), fall('pot', 2, 1.8, 1.6, 120, 220)] }; },
+  // 11. nightstand next to a wall, busy
+  () => { const w = { k: 'wall', side: 1 }, f = { k: 'nightstand', x: 270 }; return { furniture: [w, f], cat: spot(f), emit: [toss(-1, 4, 1.0, 0.6, spot(f).y), fall('ball', 5, 0.9, 0.8, 200, 330), fall('pot', 2, 1.6, 1.4, 220, 320)] }; },
+  // 12. final exam: stairs from the right, falls and rollers
+  () => { const f = { k: 'stairs', side: 1, step: 2 }; return { furniture: [f], cat: spot(f), emit: [stairBalls(f, 4, 1.1, 0.6), fall('ball', 4, 1.0, 0.8, spot(f).x - 40, spot(f).x + 40), fall('pot', 2, 1.6, 1.4, spot(f).x - 30, spot(f).x + 30)] }; }
 ];
 
+// level length = last object + time for it to arrive and settle: no idle waiting at the end
+function pace(L, settle) {
+  const probe = new Sim(Object.assign({}, L, { time: 99 }));
+  const ev = probe.events;
+  const last = ev.length ? ev[ev.length - 1].t : 3;
+  L.time = Math.round((last + (settle || 1.9)) * 10) / 10;
+  return L;
+}
+
 function tutorialLevel(i) {
-  const t = TUTORIAL[i];
-  return { world: 0, seed: 101 + i * 17, sleep: 3, cat: { x: t.cat, y: FLOOR }, statics: [], emit: t.emit, time: t.time };
+  const t = TUTORIAL[i]();
+  return pace({ world: 0, seed: 101 + i * 17, sleep: 3, cat: { x: t.cat.x, y: t.cat.y }, furniture: t.furniture, statics: [], emit: t.emit });
 }
 
 // --- procedural worlds 1-4 -----------------------------------------------------------------------
 const WORLDS = ['bedroom', 'attic', 'garden', 'workshop', 'chaos'];
 // target cheapest-solution ink: [first level, last level] of each world (sawtooth that keeps rising)
-const TARGET = [null, [165, 230], [185, 270], [200, 290], [230, 340]];
+const TARGET = [null, [150, 220], [170, 250], [180, 270], [210, 310]];
 
 function rampLanding(L) {
   const probe = Object.assign({}, L, { cat: { x: -900, y: FLOOR }, emit: [Object.assign({}, L.emit[L.emit.length - 1], { n: 1, jit: 0 })], time: 6 });
@@ -140,21 +196,32 @@ function makeLevel(wi, i, seed, d) {
   const r = rng(seed);
   const dt = Math.min(d, 1); // timings stop growing at d=1, spatial spread keeps growing
   let cx = Math.round(110 + r() * 140);
-  const L = { world: wi, seed, sleep: 3, cat: { x: cx, y: FLOOR }, statics: [], emit: [] };
-  const shelf = wi === 1 && i >= 4 && r() < 0.4;
-  if (shelf) {
-    const sy = Math.round(lerp(400, 450, r()));
-    L.cat.y = sy;
-    L.statics.push({ x: cx, y: sy + 8, w: 150, h: 16, a: 0, kind: 'shelf' });
-  }
+  const L = { world: wi, seed, sleep: 3, cat: { x: cx, y: FLOOR }, statics: [], furniture: [], emit: [] };
+  // furniture: the workshop keeps its ramps on the floor; other worlds put the cat somewhere different each time
+  const KINDS = ['floor', 'nightstand', 'sofa', 'chair', 'table', 'floor', 'wall', 'stairs'];
+  const kind = wi === 3 ? (r() < 0.5 ? 'floor' : ['table', 'stairs', 'wall'][Math.floor(r() * 3)]) : KINDS[(i + Math.floor(r() * 8)) % 8];
+  let furn = null;
+  if (kind === 'nightstand') furn = { k: 'nightstand', x: Math.round(lerp(70, 290, r())) };
+  else if (kind === 'sofa') furn = { k: 'sofa', x: Math.round(lerp(120, 240, r())) };
+  else if (kind === 'chair') furn = { k: 'chair', x: Math.round(lerp(70, 290, r())), side: r() < 0.5 ? -1 : 1 };
+  else if (kind === 'table') furn = { k: 'table', x: Math.round(lerp(110, 250, r())) };
+  else if (kind === 'tableUnder') furn = { k: 'table', x: Math.round(lerp(110, 250, r())), under: true };
+  else if (kind === 'wall') furn = { k: 'wall', side: r() < 0.5 ? -1 : 1 };
+  else if (kind === 'stairs') furn = { k: 'stairs', side: r() < 0.5 ? -1 : 1, step: 1 + Math.floor(r() * 2) };
+  if (furn) { L.furniture.push(furn); const sp0 = S.furnitureSpot(furn); L.cat = { x: Math.round(sp0.x), y: Math.round(sp0.y) }; cx = L.cat.x; }
+  L.kind = kind;
   const cy = L.cat.y;
   const sp = lerp(35, 150, d);
   const top = (n, gap, t0) => {
     L.emit.push({ k: 'ball', n: Math.ceil(n * 0.65), dt: gap * 1.5, t0, x0: cx - sp, x1: cx + sp, jit: 0.4 });
     L.emit.push({ k: 'pot', n: Math.floor(n * 0.35) + 1, dt: gap * 2.6, t0: t0 + 0.5, x0: cx - sp, x1: cx + sp, jit: 0.4 });
   };
+  // side threat: rolls along the floor for a cat on the floor, thrown in an arc for a raised cat,
+  // and comes down the steps on the stairs
   const roll = (side, n, gap, t0, speed) => {
-    const sx = cy < FLOOR ? cx + (side < 0 ? -68 : 68) : (side < 0 ? -30 : W + 30);
+    if (furn && furn.k === 'stairs') { L.emit.push(stairBalls(furn, n, gap, t0)); return; }
+    if (cy < FLOOR - 10) { L.emit.push(toss(side, n, gap, t0, cy, speed)); return; }
+    const sx = side < 0 ? -30 : W + 30;
     L.emit.push({ k: 'ball', n, dt: gap, t0, x0: sx, x1: sx, y: cy - 14, vx: -side * speed, vy: 0, jit: 0.3 });
   };
   let time;
@@ -181,7 +248,7 @@ function makeLevel(wi, i, seed, d) {
     L.statics.push({ x: Math.round(rx), y: ry, w: 150, h: 10, a: -sd * lerp(0.25, 0.42, r()), kind: 'ramp' });
     L.emit.push({ k: 'ball', n: 3 + Math.round(d * 6), dt: lerp(1.2, 0.6, dt), t0: 0.5, x0: rx + sd * 45, x1: rx + sd * 45 + 6, y: ry - 70, jit: 0.3 });
     // put the cat where the ramp throws the balls (probe one ball with the cat far away)
-    const land = rampLanding(L);
+    const land = furn ? null : rampLanding(L);
     if (land != null) { cx = Math.round(clamp(land + (r() - 0.5) * 30, 60, W - 60)); L.cat.x = cx; }
     if (i >= 1) top(2 + Math.round(d * 5), 1.4, 1.0);
     roll(-sd, 3 + Math.round(d * 4), 1.4, 1.8, lerp(3.6, 4.6, dt));
@@ -200,8 +267,7 @@ function makeLevel(wi, i, seed, d) {
     top(3 + Math.round(d * 5), 1.3, 0.8);
     roll(-sd, 2 + Math.round(d * 3), 1.7, 1.8, 3.6);
   }
-  L.time = Math.round(time * 10) / 10;
-  return L;
+  return pace(L);
 }
 
 // ink budget multiplier over the cheapest solution: generous early, tight late
@@ -214,7 +280,7 @@ function finalize(L, sol, g) {
   return L;
 }
 
-module.exports = { makeLevel, solve, roofWins, run, shapes, tutorialLevel };
+module.exports = { makeLevel, solve, roofWins, run, shapes, tutorialLevel, pace };
 if (require.main === module) main();
 function main() {
 const PER = 12;
@@ -234,7 +300,7 @@ for (let wi = 0; wi < WORLDS.length; wi++) {
       found = finalize(L, sol, g);
       if (i >= 4 && roofWins(found, found.ink)) console.error('  note: tutorial ' + (i + 1) + ' solvable by roof');
     } else {
-      const target = lerp(TARGET[wi][0], TARGET[wi][1], i / 11), lo = target * 0.88, hi = target * 1.18;
+      const target = lerp(TARGET[wi][0], TARGET[wi][1], i / 11), lo = target * 0.8, hi = target * 1.25;
       let d = 0.25 + 0.6 * (i / 11), best = null;
       for (let attempt = 0; attempt < (process.env.FAST ? 25 : 60) && !found; attempt++) {
         const seed = 1000 * (wi + 1) + 37 * i + attempt * 7919 + 11;
@@ -244,9 +310,9 @@ for (let wi = 0; wi < WORLDS.length; wi++) {
           const err = sol.ink < lo ? lo - sol.ink : (sol.ink > hi ? sol.ink - hi : 0);
           if (err === 0) {
             const cand = finalize(L, sol, g);
-            if (!roofWins(cand, cand.ink)) { found = cand; break; }
-            d = Math.min(1.8, d + 0.08); // a roof works: make it busier
-            continue;
+            // variety: on furniture the intended answer is rarely a plain box; try other layouts first
+            if (sol.shape === 'pi' && L.kind !== 'floor' && attempt < 12) continue;
+            found = cand; break;
           }
           if (!best || err < best.err) best = { err, L, sol };
           d = clamp(d + (sol.ink < lo ? 0.1 : -0.1), 0, 1.8);
