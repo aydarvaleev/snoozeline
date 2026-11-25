@@ -57,6 +57,14 @@
     for (i = 0; i < p.length; i++) parts.push(M.Bodies.circle(p[i].x, p[i].y, T / 2, o));
     var body = M.Body.create({ parts: parts, friction: 0.8, frictionStatic: 1, restitution: 0.05,
       label: 'stroke', collisionFilter: { category: CAT_BIT, mask: 0xFFFF } });
+    // Matter sums the parts' own inertias without the parallel-axis term, so a long line would get
+    // a tiny moment of inertia and spin/jitter wildly at the slightest touch. Use the real value.
+    var I = 0;
+    for (i = 1; i < body.parts.length; i++) {
+      var q = body.parts[i], dx = q.position.x - body.position.x, dy = q.position.y - body.position.y;
+      I += q.inertia + q.mass * (dx * dx + dy * dy);
+    }
+    M.Body.setInertia(body, I);
     body.inkLen = len;
     body.local = p.map(function (q) { return { x: q.x - body.position.x, y: q.y - body.position.y }; });
     return body;
@@ -65,9 +73,9 @@
   /* Furniture: one record {k, x, side} -> solid rectangles (shared by sim, generator and art).
      top(f) is the surface the cat sleeps on. Side view, y grows downwards, FLOOR is the floor line. */
   var FURN = {
-    nightstand: { w: 84, h: 112 },
+    nightstand: { w: 132, h: 112 },
     sofa: { w: 152, seat: 60, arm: 24, armH: 106 },
-    chair: { w: 84, seat: 80, back: 130 },
+    chair: { w: 124, seat: 80, back: 130 },
     table: { w: 196, h: 122 },
     wall: { w: 22 },
     stairs: { n: 4, sw: 84, rise: 40 }
@@ -106,7 +114,7 @@
     var d = FURN[f.k];
     if (f.k === 'nightstand') return { x: f.x, y: FLOOR - d.h };
     if (f.k === 'sofa') return { x: f.x, y: FLOOR - d.seat };
-    if (f.k === 'chair') return { x: f.x - (f.side || 1) * 4, y: FLOOR - d.seat };
+    if (f.k === 'chair') return { x: f.x + (f.side || 1) * 11, y: FLOOR - d.seat }; // near the backrest: free seat in front for a line
     if (f.k === 'table') return f.under ? { x: f.x, y: FLOOR } : { x: f.x, y: FLOOR - d.h };
     if (f.k === 'wall') return { x: (f.side || -1) < 0 ? d.w + 46 : W - d.w - 46, y: FLOOR };
     if (f.k === 'stairs') { var st = f.step || 1, sd = f.side || -1; return { x: sd < 0 ? d.sw * (st + 0.5) : W - d.sw * (st + 0.5), y: FLOOR - (d.n - st) * d.rise }; }

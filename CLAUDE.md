@@ -24,7 +24,8 @@ HTML5 "draw to protect" physics puzzle (sleeping cat, limited ink). Owner: Aydar
 - Interstitials: requested on every natural pause (Next / Retry / Menu from a result screen). No own counters — Bridge decides frequency.
 
 ## Furniture (v3)
-Level field `furniture: [{k, x, side, step, under}]`; kinds nightstand, sofa, chair, table, wall, stairs. Geometry lives in sim.js (FURN, furnitureParts, furnitureSpot) and is shared by sim, generator (props/bridges from part corners) and art.js (A.furniture). Players cannot draw inside furniture (points are skipped). Ink is dense (0.012) and furniture/floor are grippy so lines can rest on supports. "Cat under the table" was dropped: the legs fence every threat off. Level time = last spawn + 1.9 s (pace() in gen.js), so there is no idle waiting.
+Level field `furniture: [{k, x, side, step, under}]`; kinds nightstand, sofa, chair, table, wall, stairs. Geometry lives in sim.js (FURN, furnitureParts, furnitureSpot) and is shared by sim, generator (props/bridges from part corners) and art.js (A.furniture). Players cannot draw inside furniture (points are skipped). Nightstand is 132 wide (room for shelter legs around the cat); chair seat is 124 wide with the cat near the backrest, so a line from the backrest to the free seat edge holds.
+- strokeBody() sets the moment of inertia itself (parallel-axis sum): Matter sums only the parts' own inertias, which made long lines jitter and fly off at a touch. Never remove this; all hints depend on it. Ink is dense (0.012) and furniture/floor are grippy so lines can rest on supports. "Cat under the table" was dropped: the legs fence every threat off. Level time = last spawn + 1.9 s (pace() in gen.js), so there is no idle waiting.
 
 ## Levels
 Sim resets Matter's body ids per level (deterministic per engine). Chaos world: cat wakes on the 4th hit (sleep 4) because it is the most chaotic. Level field `bumps` = hits the reference hint takes; 3 stars allow max(1, bumps) hits.
