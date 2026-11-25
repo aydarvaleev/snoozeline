@@ -1,0 +1,16 @@
+{
+  "forciblySetPlatformId": "",
+  "advertisement": {
+    "interstitial": {
+      "placements": [
+        { "platform": "playgama", "id": "level_completed" },
+        { "platform": "playgama", "id": "level_failed" }
+      ]
+    },
+    "rewarded": {
+      "placements": [
+        { "platform": "playgama", "id": "skip_level" }
+      ]
+    }
+  }
+}

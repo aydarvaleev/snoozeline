@@ -1,0 +1,17 @@
+{
+  "name": "catnap",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@playgama/bridge": "^2.4.4",
+    "matter-js": "^0.20.0",
+    "puppeteer-core": "^25.18.1"
+  }
+}
