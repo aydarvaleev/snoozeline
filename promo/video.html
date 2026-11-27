@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Snoozeline video</title>
+<style>body{margin:0;background:#222;color:#fff;font-family:system-ui,sans-serif}canvas{display:block;max-width:60vw;height:auto}</style></head>
+<body>
+<!-- Preview video rendered frame by frame with the game's own physics and art (no screen recording).
+     promo/video.html?o=land|port&send=<receiver url>  -> posts JPEG frames v_<o>_0001.jpg ... ; promo/encode.swift turns them into MP4. -->
+<script src="../matter.min.js"></script>
+<script src="../src/sim.js"></script>
+<script src="../src/levels.js"></script>
+<script src="../src/art.js"></script>
+<script>
+(async function () {
+  var S = window.CatSim, A = window.CatArt, L = window.CATNAP_LEVELS, W = S.W, FLOOR = S.FLOOR;
+  var q = new URLSearchParams(location.search), O = q.get('o') || 'land', send = q.get('send');
+  var CFG = { land: { w: 1920, h: 1080, vh: 430, cy: 385 }, port: { w: 1080, h: 1620, vh: 540, cy: 330 } }[O];
+  var FPS = 30, DRAW = 24, RUN = 150;
+  // three levels from different worlds, each with another unlockable cat
+  var CLIPS = [{ i: 7, skin: 'ginger' }, { i: 15, skin: 'tuxedo' }, { i: 54, skin: 'cosmic' }];
+  var c = document.createElement('canvas'); c.width = CFG.w; c.height = CFG.h; document.body.appendChild(c);
+  var ctx = c.getContext('2d', { alpha: false });
+  var k = CFG.h / CFG.vh, vw = CFG.w / k, x0 = 180 - vw / 2, y0 = CFG.cy - CFG.vh / 2;
+  var n = 0;
+
+  function strokePts(b) {
+    var a = b.angle, co = Math.cos(a), si = Math.sin(a);
+    return b.local.map(function (p) { return { x: b.position.x + p.x * co - p.y * si, y: b.position.y + p.x * si + p.y * co }; });
+  }
+  function frame(sim, lv, skin, t, live, finger, hurt) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#f6d9bf'; ctx.fillRect(0, 0, CFG.w, CFG.h);
+    ctx.setTransform(k, 0, 0, k, -x0 * k, -y0 * k);
+    A.background(ctx, lv.world, x0, y0, x0 + vw, y0 + CFG.vh, W, FLOOR, k, Math.floor(lv.id / 6) % 2);
+    (lv.furniture || []).forEach(function (f) { A.furniture(ctx, f, lv.world); });
+    sim.statics.forEach(function (b) { if (b.def) A.statics(ctx, b.def, lv.world); });
+    A.cat(ctx, lv.cat.x, lv.cat.y, { t: t, hurt: hurt, awake: sim.sleep <= 0, skin: A.skin(skin) });
+    sim.strokes.forEach(function (b) { A.ink(ctx, strokePts(b), false, A.PAL[lv.world].ui); });
+    if (live && live.length > 1) A.ink(ctx, live, true);
+    sim.threats.forEach(function (b) {
+      var p = b.position;
+      if (b.kind === 'ball') A.ball(ctx, p.x, p.y, b.circleRadius || 13, b.angle, lv.world);
+      else if (b.kind === 'pot') A.box(ctx, p.x, p.y, b.size || 26, b.angle, lv.world);
+      else if (b.kind === 'drop') A.drop(ctx, p.x, p.y, b.velocity.x, b.velocity.y);
+      else if (b.kind === 'bee') A.bee(ctx, p.x, p.y, t, b.velocity.x, b.beePhase || 0);
+    });
+    if (finger) { // the player's fingertip while drawing
+      ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.strokeStyle = 'rgba(80,60,140,.5)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(finger.x, finger.y, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+  }
+  async function emit() {
+    n++;
+    if (!send) return;
+    var b = await new Promise(function (ok) { c.toBlob(ok, 'image/jpeg', 0.9); });
+    await fetch(send + '/?name=v_' + O + '_' + String(n).padStart(4, '0') + '.jpg', { method: 'POST', body: b });
+    if (n % 30 === 0) document.title = O + ' frame ' + n;
+  }
+  var report = [];
+  for (var ci = 0; ci < CLIPS.length; ci++) {
+    var lv = L[CLIPS[ci].i], skin = CLIPS[ci].skin, sim = new S.Sim(lv);
+    var path = S.resample(lv.hint, 3), t = ci * 7;
+    for (var f = 0; f < DRAW; f++) { // draw the hint stroke like a finger would
+      var m = Math.max(2, Math.round(path.length * (f + 1) / DRAW));
+      frame(sim, lv, skin, t + f / FPS, path.slice(0, m), path[m - 1], 0); await emit();
+    }
+    sim.addStroke(lv.hint); sim.state = 'running';
+    var hurt = 0;
+    for (f = 0; f < RUN; f++) {
+      for (var s = 0; s < 4; s++) { sim.step(); sim.fx.splice(0).forEach(function (e) { if (e.t === 'hurt') hurt = 1; }); }
+      hurt = Math.max(0, hurt - 0.07);
+      frame(sim, lv, skin, t + (DRAW + f) / FPS, null, null, hurt); await emit();
+    }
+    report.push(CLIPS[ci].i + 1 + ':' + sim.state + '/sleep' + sim.sleep);
+  }
+  document.title = 'DONE ' + O + ' ' + n + ' ' + report.join(',');
+})();
+</script>
+</body></html>
