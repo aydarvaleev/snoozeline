@@ -43,7 +43,7 @@ Sim resets Matter's body ids per level (deterministic per engine). Chaos world: 
 ## CrazyGames
 - build.py also writes dist/snoozeline-crazygames.zip (same files: Bridge detects crazy_games and loads their SDK v3 itself) and dist/crazygames-covers/ (1920x1080, 800x1200, 800x800 from promo/cover.html). Upload is done by the owner on developer.crazygames.com.
 - Their rules handled in code via P.id === 'crazy_games': no interstitial on the result-screen Menu button (no ads on navigation). level_paused/level_resumed are sent for settings during a level and when leaving a level for the menu (Bridge relays them as gameplayStop/Start). Leaderboard is hidden there (type not_available).
-- Covers must have NO alpha channel (CrazyGames rejects PNGs with transparency): promo/cover.html draws on an opaque canvas and also writes JPGs; the CrazyGames folder uses the JPGs. Preview videos (17.4 s, no audio, 1920x1080 and 1080x1620) come from promo/video.html (frames rendered with the real sim) + promo/encode.swift (AVFoundation H.264).
+- Covers must have NO alpha channel (CrazyGames rejects PNGs with transparency): promo/cover.html draws on an opaque canvas and also writes JPGs; the CrazyGames folder uses the JPGs; its square and landscape covers (cg_*) and the 2:3 one keep the title at the bottom, away from the top-left "label zone" where CrazyGames puts NEW/HOT badges. Preview videos (17.4 s, no audio, 1920x1080 and 1080x1620) come from promo/video.html (frames rendered with the real sim) + promo/encode.swift (AVFoundation H.264).
 - Test locally with `?platform_id=crazy_games` (CrazyGames SDK runs in its local environment).
 
 ## Open items

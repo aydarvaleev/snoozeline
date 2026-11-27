@@ -11,7 +11,7 @@ subprocess.run('cd dist/zip && zip -qr ../snoozeline-playgama.zip .', shell=True
 # CrazyGames: the same build (Bridge detects the platform and loads the CrazyGames SDK itself) plus their covers
 subprocess.run('cd dist/zip && zip -qr ../snoozeline-crazygames.zip .', shell=True, check=True)
 os.makedirs('dist/crazygames-covers')
-for src, dst in [('cover_landscape.jpg', 'landscape_1920x1080.jpg'), ('cover_portrait23.jpg', 'portrait_800x1200.jpg'), ('cover_square.jpg', 'square_800x800.jpg'),
+for src, dst in [('cover_cg_landscape.jpg', 'landscape_1920x1080.jpg'), ('cover_portrait23.jpg', 'portrait_800x1200.jpg'), ('cover_cg_square.jpg', 'square_800x800.jpg'),
                  ('preview_landscape_1920x1080.mp4', 'video_landscape_1920x1080.mp4'), ('preview_portrait_1080x1620.mp4', 'video_portrait_1080x1620.mp4')]:
     if os.path.exists('promo/' + src): shutil.copy('promo/' + src, 'dist/crazygames-covers/' + dst)
 d = 'dist/zip/'; h = open(d + 'index.html').read()

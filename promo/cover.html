@@ -11,7 +11,10 @@
   var SLOTS = {
     square: { w: 800, h: 800, cx: 180, cy: 446, vh: 330, ty: 0.12, ts: 0.13 },
     portrait: { w: 1080, h: 1920, cx: 180, cy: 330, vh: 600, ty: 0.072, ts: 0.12 },
-    portrait23: { w: 800, h: 1200, cx: 180, cy: 322, vh: 540, ty: 0.085, ts: 0.12 }, // CrazyGames 2:3
+    // CrazyGames puts its badges (NEW, HOT...) in the top-left corner ("label zone"): their title sits on the floor instead
+    portrait23: { w: 800, h: 1200, cx: 180, cy: 380, vh: 540, ty: 0.905, ts: 0.12 },
+    cg_square: { w: 800, h: 800, cx: 180, cy: 466, vh: 360, ty: 0.9, ts: 0.13 },
+    cg_landscape: { w: 1920, h: 1080, cx: 180, cy: 463, vh: 360, ty: 0.915, ts: 0.11 },
     landscape: { w: 1920, h: 1080, cx: 180, cy: 450, vh: 340, ty: 0.12, ts: 0.11 }
   };
   function scene(ctx) {
@@ -59,13 +62,15 @@
     scene(ctx);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     // soft vignette so the title reads well
-    var vg = ctx.createLinearGradient(0, 0, 0, s.h * 0.35); vg.addColorStop(0, 'rgba(255,240,225,.55)'); vg.addColorStop(1, 'rgba(255,240,225,0)');
-    ctx.fillStyle = vg; ctx.fillRect(0, 0, s.w, s.h * 0.35);
+    if (s.ty < 0.5) {
+      var vg = ctx.createLinearGradient(0, 0, 0, s.h * 0.35); vg.addColorStop(0, 'rgba(255,240,225,.55)'); vg.addColorStop(1, 'rgba(255,240,225,0)');
+      ctx.fillStyle = vg; ctx.fillRect(0, 0, s.w, s.h * 0.35);
+    }
     title(ctx, c, s);
     c.id = name; document.body.appendChild(c);
     return c;
   }
-  var out = ['square', 'portrait', 'landscape', 'portrait23'].map(render);
+  var out = ['square', 'portrait', 'landscape', 'portrait23', 'cg_square', 'cg_landscape'].map(render);
   var m = /[?&]send=([^&]+)/.exec(location.search);
   if (m) {
     var target = decodeURIComponent(m[1]);
