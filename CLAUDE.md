@@ -11,7 +11,7 @@ HTML5 "draw to protect" physics puzzle (sleeping cat, limited ink). Owner: Aydar
 - src/verify.js — MUST pass before every upload: no level is won without lines, every hint wins within budget, gives 3 stars, and wins in >= 5 of 6 slightly-off drawings. Physics differs in the last float digits between Node/Chrome/Safari, so only robust solutions are acceptable.
 - src/art.js — all procedural canvas art (world backgrounds cached offscreen, animated cat, threats, ink, hint ghost).
 - src/game.js — rendering loop, input, UI, audio playback. src/platform.js — Bridge adapter + standalone fallback (`?mock=1` fakes ads). src/i18n.js — 9 languages (en default; v2 strings appended at the end).
-- assets/*.ogg — real CC0 audio (Kenney + OpenGameArt), see licenses/CREDITS.md. Playgama rule 3.3.2 forbids code-synthesized sound.
+- assets/*.ogg + *.m4a (AAC copies made with afconvert, used where Ogg Vorbis is unsupported: Safari/iOS) — real CC0 audio (Kenney + OpenGameArt), see licenses/CREDITS.md. Playgama rule 3.3.2 forbids code-synthesized sound.
 - build.py — dist/snoozeline-playgama.zip (upload) and dist/snoozeline-standalone.html.
 - Setup: `npm i`. Preview: serve the folder (the app's preview cannot read ~/Desktop directly; a mirror copy is used).
 
@@ -24,7 +24,7 @@ HTML5 "draw to protect" physics puzzle (sleeping cat, limited ink). Owner: Aydar
 - Interstitials: requested on every natural pause (Next / Retry / Menu from a result screen). No own counters — Bridge decides frequency.
 
 ## Furniture (v3)
-Level field `furniture: [{k, x, side, step, under}]`; kinds nightstand, sofa, chair, table, wall, stairs. Geometry lives in sim.js (FURN, furnitureParts, furnitureSpot) and is shared by sim, generator (props/bridges from part corners) and art.js (A.furniture). Players cannot draw inside furniture (points are skipped). Nightstand is 132 wide (room for shelter legs around the cat); chair seat is 124 wide with the cat near the backrest, so a line from the backrest to the free seat edge holds.
+Level field `furniture: [{k, x, side, step, under}]`; kinds nightstand, sofa, chair, table, wall, stairs. Geometry lives in sim.js (FURN, furnitureParts, furnitureSpot) and is shared by sim, generator (props/bridges from part corners) and art.js (A.furniture). Players cannot draw inside furniture: game.js cuts a stroke where it enters a solid (hitsSolid samples every 2 px, so thin backrests count) and starts a new one where the finger leaves it. Nightstand is 132 wide (room for shelter legs around the cat); chair seat is 124 wide with the cat near the backrest, so a line from the backrest to the free seat edge holds.
 - strokeBody() sets the moment of inertia itself (parallel-axis sum): Matter sums only the parts' own inertias, which made long lines jitter and fly off at a touch. Never remove this; all hints depend on it. Ink is dense (0.012) and furniture/floor are grippy so lines can rest on supports. "Cat under the table" was dropped: the legs fence every threat off. Level time = last spawn + 1.9 s (pace() in gen.js), so there is no idle waiting.
 
 ## Levels
@@ -48,7 +48,6 @@ Sim resets Matter's body ids per level (deterministic per engine). Chaos world: 
 
 ## Open items
 - Playtest with humans; fix unfair levels (watch attic and workshop, where one "pi" box solves many levels and difficulty comes mostly from the shrinking ink budget).
-- Safari < 15 / old iOS may not decode Ogg Vorbis: add .mp3 copies of assets (game already falls back to .mp3 when ogg is unsupported).
 - Bridge behaviour can only be fully verified in the Playgama sandbox.
 - Optional: daily challenge, cat skins, GamePix/YouTube Playables builds.
 

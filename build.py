@@ -16,8 +16,9 @@ for src, dst in [('cover_cg_landscape.jpg', 'landscape_1920x1080.jpg'), ('cover_
     if os.path.exists('promo/' + src): shutil.copy('promo/' + src, 'dist/crazygames-covers/' + dst)
 d = 'dist/zip/'; h = open(d + 'index.html').read()
 h = re.sub(r'<script src="([^"]+)"></script>', lambda m: '' if 'bridge' in m.group(1) else '<script>' + open(d + m.group(1)).read().replace('</script>', '<\\/script>') + '</script>', h)
-b64 = {n[:-4]: base64.b64encode(open('assets/' + n, 'rb').read()).decode() for n in os.listdir('assets')}
-shim = "<script>window.__AUDIO=" + str(b64).replace("'", '"') + ";var _f=window.fetch;window.fetch=function(u){var m=/assets\\/(\\w+)\\.(ogg|mp3)/.exec(u);if(m&&window.__AUDIO[m[1]]){var s=atob(window.__AUDIO[m[1]]),a=new Uint8Array(s.length);for(var i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return Promise.resolve({ok:true,arrayBuffer:function(){return Promise.resolve(a.buffer)}})}return _f.apply(this,arguments)}</script>"
+# AAC copies decode in every browser (Ogg does not in Safari), so the single-file build carries those
+b64 = {n[:-4]: base64.b64encode(open('assets/' + n, 'rb').read()).decode() for n in os.listdir('assets') if n.endswith('.m4a')}
+shim = "<script>window.__AUDIO=" + str(b64).replace("'", '"') + ";var _f=window.fetch;window.fetch=function(u){var m=/assets\\/(\\w+)\\.(ogg|m4a)/.exec(u);if(m&&window.__AUDIO[m[1]]){var s=atob(window.__AUDIO[m[1]]),a=new Uint8Array(s.length);for(var i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return Promise.resolve({ok:true,arrayBuffer:function(){return Promise.resolve(a.buffer)}})}return _f.apply(this,arguments)}</script>"
 f = h.find('<script>'); h = h[:f] + shim + h[f:]
 open('dist/snoozeline-standalone.html', 'w').write(h)
 print('ok')

@@ -52,9 +52,10 @@
   };
   function ic(n, cls) { return '<svg class="ic ' + (cls || '') + '" viewBox="0 0 24 24" aria-hidden="true">' + ICONS[n] + '</svg>'; }
 
-  /* ---------- audio: compressed files from assets/ (ogg, mp3 fallback for old Safari); missing files are tolerated ---------- */
+  /* ---------- audio: compressed files from assets/ (ogg, m4a/AAC fallback for Safari); missing files are tolerated ---------- */
   var AC = null, bufs = {}, musicNode = null;
-  var EXT = (function () { var a = document.createElement('audio'); return a.canPlayType && a.canPlayType('audio/ogg; codecs="vorbis"') ? '.ogg' : '.mp3'; })();
+  // Ogg Vorbis where supported; AAC copies (.m4a) for Safari / older iOS, which cannot decode Ogg
+  var EXT = (function () { var a = document.createElement('audio'); return a.canPlayType && a.canPlayType('audio/ogg; codecs="vorbis"') ? '.ogg' : '.m4a'; })();
   var SOUNDS = ['click', 'draw', 'thud', 'hurt', 'win', 'fail', 'star', 'music'];
   function audioInit() {
     if (AC) return;
@@ -249,10 +250,15 @@
     $('board').classList.remove('hide');
     P.getEntries().then(function (es) {
       if (!es || !es.length) { $('lbList').innerHTML = '<div class="lbmsg">' + t('lbEmpty') + '</div>'; return; }
-      $('lbList').innerHTML = es.slice(0, 20).map(function (e, k) {
-        var nm = String(e.name || '—').replace(/[<>&"]/g, '');
-        return '<div class="lbr"><b>' + (e.rank || k + 1) + '</b><span>' + nm + '</span><i>' + fmt(e.score || 0) + '</i></div>';
-      }).join('');
+      // names come from other players: build the rows as DOM text, never as HTML
+      var list = $('lbList'); list.textContent = '';
+      es.slice(0, 20).forEach(function (e, k) {
+        var row = document.createElement('div'); row.className = 'lbr';
+        [['b', String(e.rank || k + 1)], ['span', String(e.name || '—')], ['i', fmt(Math.floor(+e.score || 0))]].forEach(function (c) {
+          var el = document.createElement(c[0]); el.textContent = c[1]; row.appendChild(el);
+        });
+        list.appendChild(row);
+      });
     }).catch(function () { $('lbList').innerHTML = '<div class="lbmsg">' + t('lbError') + '</div>'; });
   }
   $('scoreTotal').onclick = function () { if (!this.classList.contains('tap')) return; audioInit(); sfx('sfx_click'); openBoard(); };
@@ -307,25 +313,41 @@
 
   /* ---------- input ---------- */
   function pt(e) { return { x: (e.clientX - ox) / scale, y: (e.clientY - oy) / scale }; }
+  // a line that runs through furniture is cut at its edges into separate lines (a body inside a solid would be shoved out)
+  function hitsSolid(a, b) {
+    var d = Math.hypot(b.x - a.x, b.y - a.y), n = Math.max(1, Math.ceil(d / 2));
+    for (var j = 1; j <= n; j++) if (sim.inSolid(a.x + (b.x - a.x) * j / n, a.y + (b.y - a.y) * j / n)) return true;
+    return false;
+  }
+  function commitPart() {
+    var pts = drawing.pts;
+    if (pts.length >= 2 && S.pathLength(pts) > 8) sim.addStroke(pts);
+    drawing.pts = []; drawing.len = 0;
+  }
   canvas.addEventListener('pointerdown', function (e) {
     if (screen !== 'play' || !sim || sim.state === 'won' || sim.state === 'failed' || paused) return;
     audioInit(); applyAudio(); canvas.setPointerCapture(e.pointerId);
     var p = pt(e);
     if (sim.inCatZone(p.x, p.y, 6)) { toast(t('notOnCat')); return; }
-    if (sim.inSolid(p.x, p.y)) return;
-    drawing = { pts: [p], len: 0 }; $('hint').classList.add('hide'); $('tapHint').classList.add('hide');
+    var inside = sim.inSolid(p.x, p.y);
+    drawing = { pts: inside ? [] : [p], len: 0, inSolid: inside }; $('hint').classList.add('hide'); $('tapHint').classList.add('hide');
   });
   canvas.addEventListener('pointermove', function (e) {
     if (!drawing) return;
     var evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e]; if (!evs.length) evs = [e];
     for (var i = 0; i < evs.length; i++) {
-      var p = pt(evs[i]), a = drawing.pts[drawing.pts.length - 1], d = Math.hypot(p.x - a.x, p.y - a.y);
+      var p = pt(evs[i]);
+      p.y = Math.min(p.y, FLOOR - 4);
+      if (drawing.inSolid) { // waiting for the finger to leave the furniture
+        if (sim.inSolid(p.x, p.y) || sim.inCatZone(p.x, p.y, 6)) continue;
+        drawing.inSolid = false; drawing.pts = [p]; drawing.len = 0; continue;
+      }
+      var a = drawing.pts[drawing.pts.length - 1], d = Math.hypot(p.x - a.x, p.y - a.y);
       if (d < 3) continue;
       var left = sim.inkLeft() - drawing.len;
       if (d > left) { if (left > 1) { var k = left / d; p = { x: a.x + (p.x - a.x) * k, y: a.y + (p.y - a.y) * k }; d = left; } else { finishStroke(); return; } }
-      p.y = Math.min(p.y, FLOOR - 4);
       if (sim.inCatZone(p.x, p.y, 6)) { toast(t('notOnCat')); finishStroke(); return; }
-      if (sim.inSolid(p.x, p.y)) continue; // skip points inside furniture
+      if (hitsSolid(a, p)) { commitPart(); drawing.inSolid = true; updateHud(); continue; }
       drawing.pts.push(p); drawing.len += d;
       if (Math.random() < 0.35) sfx('draw', 0.5);
       if (d >= left) { finishStroke(); return; }
@@ -334,8 +356,7 @@
   });
   function finishStroke() {
     if (!drawing) return;
-    var pts = drawing.pts; drawing = null;
-    if (pts.length >= 2 && S.pathLength(pts) > 8) { sim.addStroke(pts); }
+    commitPart(); drawing = null;
     updateHud();
   }
   canvas.addEventListener('pointerup', finishStroke);
