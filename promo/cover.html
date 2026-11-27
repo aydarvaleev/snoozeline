@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Snoozeline covers</title>
+<style>body{margin:0;background:#333;font-family:system-ui,sans-serif;color:#fff}canvas{display:block;margin:10px;max-width:45vw;height:auto;box-shadow:0 0 0 1px #000}</style></head>
+<body>
+<!-- Store covers rendered with the game's own art (src/art.js). Open via a local server: promo/cover.html?send=<receiver url> -->
+<script src="../src/sim.js"></script>
+<script src="../src/art.js"></script>
+<script>
+(function () {
+  var A = window.CatArt, W = 360, FLOOR = 548;
+  var SLOTS = {
+    square: { w: 800, h: 800, cx: 180, cy: 446, vh: 330, ty: 0.12, ts: 0.13 },
+    portrait: { w: 1080, h: 1920, cx: 180, cy: 330, vh: 600, ty: 0.072, ts: 0.12 },
+    landscape: { w: 1920, h: 1080, cx: 180, cy: 450, vh: 340, ty: 0.12, ts: 0.11 }
+  };
+  function scene(ctx) {
+    var sofa = { k: 'sofa', x: 180 };
+    A.furniture(ctx, sofa, 0);
+    A.cat(ctx, 180, 488, { t: 0.35, skin: A.skin('ginger') });
+    // the player's shelter: an arch from armrest to armrest
+    var arch = [];
+    for (var k = 0; k <= 16; k++) { var a = Math.PI * (1 - k / 16); arch.push({ x: 180 + Math.cos(a) * 72, y: 440 - Math.sin(a) * 50 }); }
+    A.ink(ctx, arch, false, A.PAL[0].ui);
+    // threats bouncing off it
+    A.ball(ctx, 132, 372, 13, 0.6, 0);
+    A.box(ctx, 226, 368, 26, -0.35, 0);
+    A.ball(ctx, 288, 386, 12, 2.1, 0);
+    A.box(ctx, 84, 384, 24, 0.5, 0);
+    // little impact sparks where things hit the line
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+    [[150, 392], [210, 390]].forEach(function (p) {
+      for (var i = 0; i < 5; i++) { var an = -Math.PI * (0.15 + i * 0.175); ctx.beginPath(); ctx.moveTo(p[0] + Math.cos(an) * 6, p[1] + Math.sin(an) * 6); ctx.lineTo(p[0] + Math.cos(an) * 12, p[1] + Math.sin(an) * 12); ctx.stroke(); }
+    });
+  }
+  function title(ctx, c, s) {
+    var size = Math.round(c.height * s.ts * (s.w > s.h ? 1.25 : 1));
+    if (s.w < s.h) size = Math.round(c.width * 0.2);
+    ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    var FONT = 'px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+    ctx.font = '900 ' + size + FONT;
+    var tw = ctx.measureText('Snoozeline').width; // keep the outlined title inside 86% of the width
+    if (tw * 1.12 > c.width * 0.86) { size = Math.floor(size * c.width * 0.86 / (tw * 1.12)); ctx.font = '900 ' + size + FONT; }
+    var y = c.height * s.ty;
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = size * 0.22; ctx.strokeStyle = 'rgba(60,35,110,.35)'; ctx.strokeText('Snoozeline', c.width / 2, y + size * 0.08);
+    ctx.lineWidth = size * 0.16; ctx.strokeStyle = '#fff'; ctx.strokeText('Snoozeline', c.width / 2, y);
+    var g = ctx.createLinearGradient(0, y - size / 2, 0, y + size / 2); g.addColorStop(0, '#9b7fd6'); g.addColorStop(1, '#5b3fa8');
+    ctx.fillStyle = g; ctx.fillText('Snoozeline', c.width / 2, y);
+    ctx.restore();
+  }
+  function render(name) {
+    var s = SLOTS[name], c = document.createElement('canvas'); c.width = s.w; c.height = s.h;
+    var ctx = c.getContext('2d'), k = s.h / s.vh, vw = s.w / k;
+    var x0 = s.cx - vw / 2, y0 = s.cy - s.vh / 2;
+    ctx.setTransform(k, 0, 0, k, -x0 * k, -y0 * k);
+    A.background(ctx, 0, x0, y0, x0 + vw, y0 + s.vh, W, FLOOR, k, 0);
+    scene(ctx);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    // soft vignette so the title reads well
+    var vg = ctx.createLinearGradient(0, 0, 0, s.h * 0.35); vg.addColorStop(0, 'rgba(255,240,225,.55)'); vg.addColorStop(1, 'rgba(255,240,225,0)');
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, s.w, s.h * 0.35);
+    title(ctx, c, s);
+    c.id = name; document.body.appendChild(c);
+    return c;
+  }
+  var out = ['square', 'portrait', 'landscape'].map(render);
+  var m = /[?&]send=([^&]+)/.exec(location.search);
+  if (m) {
+    var target = decodeURIComponent(m[1]);
+    Promise.all(out.map(function (c) {
+      return new Promise(function (ok) { c.toBlob(ok, 'image/png'); }).then(function (b) {
+        return fetch(target + '/?name=cover_' + c.id + '.png', { method: 'POST', body: b }).then(function (r) { return r.text(); });
+      });
+    })).then(function (r) { document.title = 'SENT ' + r.join(','); }, function (e) { document.title = 'ERR ' + e; });
+  }
+})();
+</script>
+</body></html>
