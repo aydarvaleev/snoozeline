@@ -7,7 +7,20 @@
   var stage = $('stage');
 
   /* ---------- state ---------- */
-  var save = { done: {}, stars: {}, sound: true, music: true, lang: null };
+  var save = { done: {}, stars: {}, sound: true, music: true, lang: null, skin: 'ginger', seen: 1 };
+  // chapters of 6 levels; more levels simply add more chapters at the end
+  var CH = 6;
+  function chapterOf(i) { return Math.floor(i / CH); }
+  function chapterCount() { return Math.ceil(LEVELS.length / CH); }
+  function chapterName(c) {
+    var k = 'c' + c, w = LEVELS[c * CH] ? LEVELS[c * CH].world : 0;
+    var d = (window.I18N[lang] || {})[k] || window.I18N.en[k];
+    return d || (t('w' + w) + ' ' + (c + 1));
+  }
+  // second chapter of a world uses the alternative background (or a level may say so itself)
+  function variantOf(i) { var L = LEVELS[i]; return L && L.v != null ? L.v : chapterOf(i) % 2; }
+  function totalStars() { var n = 0; for (var k in save.stars) n += save.stars[k] || 0; return n; }
+  function skinsUnlocked(st) { return Art.SKINS.filter(function (k) { return k.cost <= st; }).length; }
   var lang = 'en', cur = 0, sim = null, drawing = null, fails = 0, paused = false, screen = 'menu', particles = [], shake = 0, hurtFlash = 0;
   var levelsPlayed = 0, catHurt = 0, catHappy = 0, hintFor = -1, toastT = 0;
   var Art = window.CatArt;
@@ -17,6 +30,7 @@
     return v ? d.replace('{n}', v) : d;
   }
   var ICONS = {
+    cat: '<path d="M4 3l4 4h8l4-4v9a8 8 0 0 1-16 0zm5 8a1.3 1.3 0 1 0 0 2.6A1.3 1.3 0 0 0 9 11zm6 0a1.3 1.3 0 1 0 0 2.6A1.3 1.3 0 0 0 15 11zm-3 4l-1.5 1.2h3z"/>',
     play: '<path d="M8 5v14l11-7z"/>', retry: '<path d="M17.65 6.35A8 8 0 1 0 19.73 14h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"/>',
     menu: '<path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/>', gear: '<path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.5 7.5 0 0 0-1.7-1L15 3h-4l-.4 3a7.5 7.5 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1c.5.4 1.1.7 1.7 1l.4 3h4l.4-3c.6-.3 1.2-.6 1.7-1l2.4 1 2-3.4zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/>',
     star: '<path d="M12 2l3 6.5 7 .8-5.2 4.8 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z"/>', lock: '<path d="M17 9V7a5 5 0 0 0-10 0v2H5v12h14V9zm-8-2a3 3 0 0 1 6 0v2H9z"/>',
@@ -66,10 +80,11 @@
   document.addEventListener('visibilitychange', function () { applyAudio(); });
 
   /* ---------- persistence ---------- */
-  function persist() { P.set(['catnap'], [JSON.stringify({ done: save.done, stars: save.stars, sound: save.sound, music: save.music, lang: save.lang })]); }
+  function persist() { P.set(['catnap'], [JSON.stringify({ done: save.done, stars: save.stars, sound: save.sound, music: save.music, lang: save.lang, skin: save.skin, seen: save.seen })]); }
   function loadSave() {
     return P.get(['catnap']).then(function (v) {
-      try { var o = JSON.parse(v[0]); if (o) { save.done = o.done || {}; save.stars = o.stars || {}; save.sound = o.sound !== false; save.music = o.music !== false; save.lang = o.lang || null; } } catch (e) {}
+      try { var o = v[0]; if (typeof o === 'string') o = JSON.parse(o); // Bridge may hand back an already parsed object
+       if (o) { save.done = o.done || {}; save.stars = o.stars || {}; save.sound = o.sound !== false; save.music = o.music !== false; save.lang = o.lang || null; save.skin = o.skin || 'ginger'; save.seen = o.seen || 1; } } catch (e) {}
     });
   }
   function unlockedMax() { var m = 0; for (var k in save.done) m = Math.max(m, +k + 1); return Math.min(m, LEVELS.length - 1); }
@@ -96,8 +111,7 @@
     if (hintFor !== i) hintFor = -1;
     hideModals(); $('hud').classList.remove('hide'); $('menu').classList.add('hide'); updateHud();
     var hint = $('hint'); var k = ['hint1', 'hint2', 'hStand', 'hSofa', 'hChair', 'hTable', 'hWall', 'hStairs', 'hintCat'][i] || null;
-    if (i % 12 === 0 && i > 0) k = 'wh' + (i / 12);
-    if (i === 12 + 0) k = 'wh1';
+    if (i > 0 && LEVELS[i].world !== LEVELS[i - 1].world && LEVELS[i].world > 0) k = 'wh' + LEVELS[i].world;
     hint.textContent = k ? t(k) : ''; hint.classList.toggle('hide', !k); $('tapHint').classList.toggle('hide', i !== 0);
     P.msg('level_started', String(i + 1));
   }
@@ -108,10 +122,21 @@
     var hs = ''; for (var i = 0; i < (sim ? sim.level.sleep || 3 : 3); i++) hs += '<span class="z ' + (sim && i >= sim.sleep ? 'off' : '') + '">z</span>';
     $('zs').innerHTML = hs;
   }
-  function hideModals() { $('win').classList.add('hide'); $('fail').classList.add('hide'); $('settings').classList.add('hide'); }
+  function hideModals() { $('win').classList.add('hide'); $('fail').classList.add('hide'); $('settings').classList.add('hide'); $('shop').classList.add('hide'); }
 
   function onWin() {
-    var s = sim.stars(); catHappy = 1; confetti(); save.done[cur] = 1; save.stars[cur] = Math.max(save.stars[cur] || 0, s); persist(); fails = 0;
+    var s = sim.stars(), wasDone = !!save.done[cur], before = totalStars();
+    catHappy = 1; confetti(); save.done[cur] = 1; save.stars[cur] = Math.max(save.stars[cur] || 0, s); persist(); fails = 0;
+    var c = chapterOf(cur), chDone = !wasDone, after = totalStars();
+    for (var q = c * CH; q < Math.min(c * CH + CH, LEVELS.length); q++) if (!save.done[q]) chDone = false;
+    var lines = '';
+    if (chDone) {
+      lines += '<div class="cd">' + t('chapDone') + '</div>';
+      if ((c + 1) * CH < LEVELS.length) lines += '<div class="cn">' + t('nextCh', chapterName(c + 1)) + '</div>';
+      setTimeout(confetti, 700);
+    }
+    if (skinsUnlocked(after) > skinsUnlocked(before)) lines += '<div class="nc">' + ic('cat') + '<span>' + t('newCat') + '</span></div>';
+    $('winExtra').innerHTML = lines; $('winExtra').classList.toggle('hide', !lines);
     sfx('sfx_win'); P.msg('level_completed', String(cur + 1));
     var st = ''; for (var i = 0; i < 3; i++) st += ic('star', i < s ? 'on' : 'off');
     $('winstars').innerHTML = st; $('winTitle').textContent = cur >= LEVELS.length - 1 ? t('the_end') : t('win');
@@ -131,14 +156,19 @@
 
   /* ---------- menu / levels ---------- */
   function showMenu() {
-    screen = 'menu'; sim = null; hideModals(); $('hud').classList.add('hide'); $('hint').classList.add('hide'); $('tapHint').classList.add('hide'); $('toast').classList.add('hide'); $('menu').classList.remove('hide');
+    var shopOpen = !$('shop').classList.contains('hide');
+    screen = 'menu'; sim = null; hideModals(); if (shopOpen) $('shop').classList.remove('hide'); $('hud').classList.add('hide'); $('hint').classList.add('hide'); $('tapHint').classList.add('hide'); $('toast').classList.add('hide'); $('menu').classList.remove('hide');
     var max = unlockedMax(), html = '';
-    for (var w = 0; w < 5; w++) {
-      var first = w * 12;
-      if (first >= LEVELS.length) break;
-      var ws = 0; for (var q = first; q < Math.min(first + 12, LEVELS.length); q++) ws += save.stars[q] || 0;
-      html += '<div style="--acc:' + Art.PAL[w].ui + '"><div class="wh"><span>' + t('w' + w) + '</span><span class="cnt">' + ic('star', 'on') + ws + '/36</span></div><div class="grid">';
-      for (var i = first; i < Math.min(first + 12, LEVELS.length); i++) {
+    for (var c = 0; c < chapterCount(); c++) {
+      var first = c * CH, end = Math.min(first + CH, LEVELS.length), w = LEVELS[first].world;
+      var ws = 0; for (var q = first; q < end; q++) ws += save.stars[q] || 0;
+      var acc = (Art.PAL[w] || Art.PAL[0]).ui;
+      if (first > max) { // locked chapter: just its title
+        html += '<div style="--acc:' + acc + '"><div class="wh lockd"><span>' + (c + 1) + '. ' + chapterName(c) + '</span>' + ic('lock') + '</div></div>';
+        continue;
+      }
+      html += '<div style="--acc:' + acc + '"><div class="wh"><span>' + (c + 1) + '. ' + chapterName(c) + '</span><span class="cnt">' + ic('star', 'on') + ws + '/' + (end - first) * 3 + '</span></div><div class="grid">';
+      for (var i = first; i < end; i++) {
         var lock = i > max, s = save.stars[i] || 0;
         html += '<button class="lv ' + (lock ? 'lock' : '') + (i === max ? ' cur' : '') + '" data-i="' + i + '" ' + (lock ? 'disabled aria-label="' + t('locked') + '"' : '') + '>' +
           (lock ? ic('lock') : '<b>' + (i + 1) + '</b><span class="mini">' + [0, 1, 2].map(function (k) { return ic('star', k < s ? 'on' : 'off'); }).join('') + '</span>') + '</button>';
@@ -147,12 +177,47 @@
     }
     $('levelList').innerHTML = html;
     $('menuTitle').textContent = t('title');
+    var ts = totalStars(), nu = skinsUnlocked(ts);
+    $('starTotal').innerHTML = ic('star', 'on') + '<span>' + ts + '</span>';
+    $('catBtn').innerHTML = ic('cat') + (nu > save.seen ? '<i class="dot"></i>' : '');
+    $('catBtn').setAttribute('aria-label', t('cats'));
+    var mx = $('levelList').querySelector('.lv.cur');
+    if (mx) $('menu').scrollTop = Math.max(0, mx.offsetTop - $('menu').clientHeight / 2);
     $('continue').innerHTML = ic('play') + '<span>' + t('level', max + 1) + '</span>';
   }
   $('levelList').addEventListener('click', function (e) {
     var b = e.target.closest('.lv'); if (!b || b.disabled) return; sfx('sfx_click'); startLevel(+b.dataset.i);
   });
   $('continue').onclick = function () { audioInit(); sfx('sfx_click'); startLevel(unlockedMax()); };
+
+  /* ---------- cats (skins unlocked by total stars) ---------- */
+  function openShop() {
+    var ts = totalStars(); save.seen = skinsUnlocked(ts); persist();
+    $('shopTitle').textContent = t('cats');
+    $('shopStars').innerHTML = ic('star', 'on') + '<span>' + ts + '</span>';
+    var html = '';
+    Art.SKINS.forEach(function (k, n) {
+      var open = k.cost <= ts, sel = save.skin === k.id;
+      html += '<button class="sk' + (sel ? ' sel' : '') + (open ? '' : ' lock') + '" data-id="' + k.id + '"' + (open ? '' : ' disabled') + '>' +
+        '<canvas width="220" height="130" data-n="' + n + '"></canvas><b>' + t('cat_' + k.id) + '</b>' +
+        '<span class="st">' + (open ? (sel ? t('chosen') : t('choose')) : ic('lock') + ic('star', 'on') + k.cost) + '</span></button>';
+    });
+    $('skinGrid').innerHTML = html;
+    [].forEach.call($('skinGrid').querySelectorAll('canvas'), function (cv) {
+      var g = cv.getContext('2d'), k = Art.SKINS[+cv.dataset.n];
+      g.setTransform(2, 0, 0, 2, 0, 0); g.globalAlpha = k.cost <= ts ? 1 : 0.45;
+      Art.cat(g, 58, 56, { t: 0.4, skin: k });
+    });
+    $('closeShop').innerHTML = ic('close'); $('closeShop').setAttribute('aria-label', t('close'));
+    $('shop').classList.remove('hide');
+    showMenu();
+  }
+  $('skinGrid').addEventListener('click', function (e) {
+    var b = e.target.closest('.sk'); if (!b || b.disabled) return;
+    sfx('sfx_click'); save.skin = b.dataset.id; persist(); openShop();
+  });
+  $('catBtn').onclick = function () { audioInit(); sfx('sfx_click'); openShop(); };
+  $('closeShop').onclick = function () { sfx('sfx_click'); $('shop').classList.add('hide'); };
 
   /* ---------- settings ---------- */
   function buildSettings() {
@@ -239,13 +304,13 @@
   function render(tt) {
     ctx.setTransform(scale * dpr, 0, 0, scale * dpr, vox * scale * dpr, voy * scale * dpr);
     var wi = sim ? sim.level.world : 0;
-    Art.background(ctx, wi, -vox, -voy, W + vox, H + voy, W, FLOOR, scale * dpr);
+    Art.background(ctx, wi, -vox, -voy, W + vox, H + voy, W, FLOOR, scale * dpr, sim ? variantOf(cur) : 0);
     if (shake > 0) { ctx.save(); ctx.translate((Math.random() - .5) * shake, (Math.random() - .5) * shake); }
     if (sim) {
       (sim.level.furniture || []).forEach(function (f) { Art.furniture(ctx, f, wi); });
       sim.statics.forEach(function (b) { if (b.def) Art.statics(ctx, b.def, wi); });
       var c = sim.level.cat;
-      Art.cat(ctx, c.x, c.y, { t: tt, hurt: catHurt, awake: sim.sleep <= 0, happy: catHappy });
+      Art.cat(ctx, c.x, c.y, { t: tt, hurt: catHurt, awake: sim.sleep <= 0, happy: catHappy, skin: Art.skin(save.skin) });
       if (sim.level.hint && (hintFor === cur || (cur === 0 && !sim.strokes.length && !drawing))) Art.ghost(ctx, sim.level.hint, tt);
       sim.strokes.forEach(function (b) {
         var pts = b.local, a = b.angle, co = Math.cos(a), si = Math.sin(a), q = [];
@@ -332,5 +397,5 @@
     }
   }
   P.init().then(loadSave).then(boot);
-  window.__catnap = { start: startLevel, get sim() { return sim; }, menu: showMenu };
+  window.__catnap = { start: startLevel, get sim() { return sim; }, menu: showMenu, reload: function () { return loadSave().then(showMenu); } };
 })();

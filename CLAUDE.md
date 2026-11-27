@@ -31,6 +31,13 @@ Level field `furniture: [{k, x, side, step, under}]`; kinds nightstand, sofa, ch
 Sim resets Matter's body ids per level (deterministic per engine). Chaos world: cat wakes on the 4th hit (sleep 4) because it is the most chaotic. Level field `bumps` = hits the reference hint takes; 3 stars allow max(1, bumps) hits.
 60 levels (5 worlds x 12): 0 bedroom (hand-authored tutorial specs, one idea per level), 1 attic (drips+wind+rollers), 2 garden (bees), 3 workshop (ramps throw balls at the cat; cat placed at the ramp's landing point), 4 chaos. Targets per world are in TARGET in gen.js; budget factor falls from ~2.6x (tutorial) to 1.4x (last level).
 
+## Chapters and cats (v4)
+- Menu groups levels in chapters of CH=6 (game.js); names c0..c9 in i18n, fallback "<world name> N" so adding levels just adds chapters at the end (progress is stored by level index — only append). Locked chapters show only their title.
+- Second chapter of each world uses the alternative background (PAL2 / `v` flag in art.js bg()); a level may force it with field `v`.
+- Win card shows "Chapter complete!" (first completion) and "New cat unlocked!". Cats (Art.SKINS) unlock by TOTAL stars (thresholds, nothing is spent); chosen skin is saved as `skin`, `seen` = number of unlocked cats already shown (red dot on the menu cat button).
+- Bridge storage.get may return the save already parsed (object) — loadSave() accepts both. `__catnap.reload()` reloads the save (testing).
+- Next idea: score per level + leaderboard via bridge.leaderboards (Playgama itself: only via SaaS; YouTube: native). Hide when type is not_available.
+
 ## Open items
 - Playtest with humans; fix unfair levels (watch attic and workshop, where one "pi" box solves many levels and difficulty comes mostly from the shrinking ink budget).
 - Safari < 15 / old iOS may not decode Ogg Vorbis: add .mp3 copies of assets (game already falls back to .mp3 when ogg is unsupported).

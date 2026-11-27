@@ -131,3 +131,36 @@ window.LANG_NAMES = { en: 'English', ru: 'Русский', de: 'Deutsch', es: 'E
   };
   for (var k in add) if (X[k]) for (var s in add[k]) X[k][s] = add[k][s];
 })(window.I18N);
+// v4: chapters of 6 levels, cats unlocked by stars
+(function (X) {
+  var add = {
+    en: { c0: 'Bedroom', c1: 'Living Room', c2: 'Leaky Attic', c3: 'Attic at Night', c4: 'Bee Garden', c5: 'Evening Garden', c6: 'Workshop', c7: 'Garage', c8: 'Chaos', c9: 'Total Chaos',
+      chapDone: 'Chapter complete!', nextCh: 'Next: {n}', newCat: 'New cat unlocked!', cats: 'Cats', choose: 'Choose', chosen: 'Chosen',
+      cat_ginger: 'Ginger', cat_grey: 'Smoky', cat_black: 'Shadow', cat_calico: 'Calico', cat_siamese: 'Siamese', cat_tuxedo: 'Tuxedo', cat_nightcap: 'Sleepyhead', cat_cosmic: 'Cosmic' },
+    ru: { c0: 'Спальня', c1: 'Гостиная', c2: 'Протекающий чердак', c3: 'Ночной чердак', c4: 'Пчелиный сад', c5: 'Вечерний сад', c6: 'Мастерская', c7: 'Гараж', c8: 'Хаос', c9: 'Полный хаос',
+      chapDone: 'Глава пройдена!', nextCh: 'Дальше: {n}', newCat: 'Новый кот открыт!', cats: 'Коты', choose: 'Выбрать', chosen: 'Выбран',
+      cat_ginger: 'Рыжик', cat_grey: 'Дымок', cat_black: 'Уголёк', cat_calico: 'Пятнашка', cat_siamese: 'Сиамец', cat_tuxedo: 'Фрачник', cat_nightcap: 'Соня', cat_cosmic: 'Космос' },
+    de: { c0: 'Schlafzimmer', c1: 'Wohnzimmer', c2: 'Undichter Dachboden', c3: 'Dachboden bei Nacht', c4: 'Bienengarten', c5: 'Abendgarten', c6: 'Werkstatt', c7: 'Garage', c8: 'Chaos', c9: 'Totales Chaos',
+      chapDone: 'Kapitel geschafft!', nextCh: 'Weiter: {n}', newCat: 'Neue Katze freigeschaltet!', cats: 'Katzen', choose: 'Wählen', chosen: 'Gewählt',
+      cat_ginger: 'Rotfell', cat_grey: 'Rauchi', cat_black: 'Schatten', cat_calico: 'Glückskatze', cat_siamese: 'Siamese', cat_tuxedo: 'Frack', cat_nightcap: 'Schlafmütze', cat_cosmic: 'Kosmos' },
+    es: { c0: 'Dormitorio', c1: 'Salón', c2: 'Desván con goteras', c3: 'Desván de noche', c4: 'Jardín de abejas', c5: 'Jardín al atardecer', c6: 'Taller', c7: 'Garaje', c8: 'Caos', c9: 'Caos total',
+      chapDone: '¡Capítulo superado!', nextCh: 'Siguiente: {n}', newCat: '¡Nuevo gato desbloqueado!', cats: 'Gatos', choose: 'Elegir', chosen: 'Elegido',
+      cat_ginger: 'Canela', cat_grey: 'Humo', cat_black: 'Sombra', cat_calico: 'Tricolor', cat_siamese: 'Siamés', cat_tuxedo: 'Esmoquin', cat_nightcap: 'Dormilón', cat_cosmic: 'Cósmico' },
+    fr: { c0: 'Chambre', c1: 'Salon', c2: 'Grenier qui fuit', c3: 'Grenier la nuit', c4: 'Jardin des abeilles', c5: 'Jardin du soir', c6: 'Atelier', c7: 'Garage', c8: 'Chaos', c9: 'Chaos total',
+      chapDone: 'Chapitre terminé !', nextCh: 'Suite : {n}', newCat: 'Nouveau chat débloqué !', cats: 'Chats', choose: 'Choisir', chosen: 'Choisi',
+      cat_ginger: 'Roux', cat_grey: 'Fumée', cat_black: 'Ombre', cat_calico: 'Tricolore', cat_siamese: 'Siamois', cat_tuxedo: 'Smoking', cat_nightcap: 'Marmotte', cat_cosmic: 'Cosmique' },
+    pt: { c0: 'Quarto', c1: 'Sala', c2: 'Sótão com goteiras', c3: 'Sótão à noite', c4: 'Jardim das abelhas', c5: 'Jardim ao entardecer', c6: 'Oficina', c7: 'Garagem', c8: 'Caos', c9: 'Caos total',
+      chapDone: 'Capítulo concluído!', nextCh: 'A seguir: {n}', newCat: 'Novo gato desbloqueado!', cats: 'Gatos', choose: 'Escolher', chosen: 'Escolhido',
+      cat_ginger: 'Laranjinha', cat_grey: 'Fumaça', cat_black: 'Sombra', cat_calico: 'Tricolor', cat_siamese: 'Siamês', cat_tuxedo: 'Smoking', cat_nightcap: 'Dorminhoco', cat_cosmic: 'Cósmico' },
+    tr: { c0: 'Yatak Odası', c1: 'Oturma Odası', c2: 'Akan Tavan Arası', c3: 'Gece Tavan Arası', c4: 'Arı Bahçesi', c5: 'Akşam Bahçesi', c6: 'Atölye', c7: 'Garaj', c8: 'Kaos', c9: 'Tam Kaos',
+      chapDone: 'Bölüm tamamlandı!', nextCh: 'Sıradaki: {n}', newCat: 'Yeni kedi açıldı!', cats: 'Kediler', choose: 'Seç', chosen: 'Seçildi',
+      cat_ginger: 'Tarçın', cat_grey: 'Duman', cat_black: 'Gölge', cat_calico: 'Üç Renkli', cat_siamese: 'Siyam', cat_tuxedo: 'Smokin', cat_nightcap: 'Uykucu', cat_cosmic: 'Kozmik' },
+    id: { c0: 'Kamar Tidur', c1: 'Ruang Tamu', c2: 'Loteng Bocor', c3: 'Loteng Malam', c4: 'Taman Lebah', c5: 'Taman Senja', c6: 'Bengkel', c7: 'Garasi', c8: 'Kacau', c9: 'Kacau Total',
+      chapDone: 'Bab selesai!', nextCh: 'Berikutnya: {n}', newCat: 'Kucing baru terbuka!', cats: 'Kucing', choose: 'Pilih', chosen: 'Dipilih',
+      cat_ginger: 'Oren', cat_grey: 'Asap', cat_black: 'Bayangan', cat_calico: 'Belang Tiga', cat_siamese: 'Siam', cat_tuxedo: 'Tuksedo', cat_nightcap: 'Si Ngantuk', cat_cosmic: 'Kosmik' },
+    hi: { c0: 'बेडरूम', c1: 'बैठक', c2: 'टपकती अटारी', c3: 'रात की अटारी', c4: 'मधुमक्खी बाग़', c5: 'शाम का बाग़', c6: 'वर्कशॉप', c7: 'गैराज', c8: 'हंगामा', c9: 'पूरा हंगामा',
+      chapDone: 'अध्याय पूरा!', nextCh: 'आगे: {n}', newCat: 'नई बिल्ली खुली!', cats: 'बिल्लियाँ', choose: 'चुनो', chosen: 'चुनी गई',
+      cat_ginger: 'नारंगी', cat_grey: 'धुआँ', cat_black: 'परछाईं', cat_calico: 'तिरंगी', cat_siamese: 'स्यामी', cat_tuxedo: 'टक्सीडो', cat_nightcap: 'नींदू', cat_cosmic: 'कॉस्मिक' }
+  };
+  for (var k in add) if (X[k]) for (var s in add[k]) X[k][s] = add[k][s];
+})(window.I18N);

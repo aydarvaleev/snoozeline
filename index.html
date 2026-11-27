@@ -46,11 +46,30 @@ button{font:inherit;color:inherit;border:0;cursor:pointer}
 .lv.cur{outline:.2em solid var(--acc);outline-offset:-.2em}
 #menu h1{margin:.2em 0 .1em;text-align:center;font-size:2.4em;color:#5b3fa8;letter-spacing:.02em;text-shadow:0 .08em 0 rgba(91,63,168,.2)}
 #menu h3{margin:1em 0 .4em;font-size:1em;opacity:.8}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.5em}
-.lv{aspect-ratio:1;border-radius:.9em;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:1.05em;box-shadow:0 .15em 0 rgba(60,40,80,.2)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5em}
+.lv{aspect-ratio:1.45;border-radius:.9em;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:1.05em;box-shadow:0 .15em 0 rgba(60,40,80,.2)}
 .lv.lock{background:rgba(255,255,255,.5);opacity:.6}
 .lv .mini .ic{width:.75em;height:.75em}
 .top{display:flex;justify-content:flex-end;align-items:center;gap:.5em}
+#starTotal{margin-right:auto;display:flex;align-items:center;gap:.3em;background:#fff;border-radius:1em;padding:.4em .8em;font-weight:800;box-shadow:0 .15em 0 rgba(60,40,80,.2)}
+#starTotal .ic,#shopStars .ic{width:1.2em;height:1.2em}
+#catBtn{position:relative}
+#catBtn .dot{position:absolute;right:.1em;top:.1em;width:.7em;height:.7em;border-radius:50%;background:#e8503f;border:.12em solid #fff}
+.wh.lockd{opacity:.55}
+.wh.lockd .ic{width:1.1em;height:1.1em}
+#winExtra .cd{font-weight:900;font-size:1.15em;color:#5b3fa8;margin-top:.2em}
+#winExtra .cn{font-weight:600;opacity:.75;margin-top:.15em}
+#winExtra .nc{display:inline-flex;align-items:center;gap:.4em;margin-top:.5em;padding:.35em .8em;border-radius:1em;background:#ffe9a8;font-weight:800}
+#winExtra .nc .ic{width:1.2em;height:1.2em}
+#shop .card{max-width:24em;max-height:92%;overflow-y:auto}
+#shopStars{display:inline-flex;align-items:center;gap:.3em;font-weight:800;margin-bottom:.6em}
+#skinGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:.5em}
+.sk{background:#fff;border-radius:1em;padding:.4em .3em .5em;display:flex;flex-direction:column;align-items:center;gap:.15em;box-shadow:0 .15em 0 rgba(60,40,80,.2)}
+.sk canvas{position:static;width:100%;max-width:9em;aspect-ratio:220/130}
+.sk.sel{outline:.2em solid #7c5cc4;outline-offset:-.2em}
+.sk .st{display:flex;align-items:center;gap:.2em;font-size:.85em;font-weight:700;color:#7c5cc4}
+.sk.lock .st{color:#8a7f96}
+.sk .st .ic{width:1em;height:1em}
 #continue{display:flex;margin:.6em auto;font-size:1.15em}
 .set .r{display:flex;align-items:center;gap:.6em;margin:.7em 0;text-align:left}
 .set .r span{flex:1;font-weight:600}
@@ -103,17 +122,19 @@ body.intro #hint,body.intro #tapHint{visibility:hidden}
   <div id="tapHint" class="hide"></div>
   <div id="toast" class="hide"></div>
   <div id="menu">
-    <div class="top"><button class="btn round" id="gear2"></button></div>
+    <div class="top"><div id="starTotal"></div><button class="btn round" id="catBtn"></button><button class="btn round" id="gear2"></button></div>
     <h1 id="menuTitle">Snoozeline</h1>
     <button class="btn main" id="continue"></button>
     <div id="levelList"></div>
     <div id="by">by VALEY STUDIO</div>
   </div>
-  <div id="win" class="modal hide"><div class="card"><div id="winstars"></div><h2 id="winTitle"></h2>
+  <div id="win" class="modal hide"><div class="card"><div id="winstars"></div><h2 id="winTitle"></h2><div id="winExtra" class="hide"></div>
     <div class="row"><button class="btn round" id="menu2"></button><button class="btn round" id="retry3x" style="display:none"></button><button class="btn main" id="nextBtn"></button><button class="btn" id="retry3"></button></div></div></div>
   <div id="fail" class="modal hide"><div class="card"><h2 id="failTitle"></h2>
     <div class="row"><button class="btn round" id="menu3"></button><button class="btn main" id="retry2"></button></div>
     <div class="row"><button class="btn" id="hintBtn"></button><button class="btn" id="skipBtn"></button></div></div></div>
+  <div id="shop" class="modal hide"><div class="card"><h2 id="shopTitle"></h2><div id="shopStars"></div><div id="skinGrid"></div>
+    <div class="row"><button class="btn round" id="closeShop"></button></div></div></div>
   <div id="settings" class="modal hide"><div class="card set"><h2 id="setTitle"></h2>
     <div class="r" id="sndRow"></div><div class="r" id="musRow"></div>
     <div style="text-align:left;font-weight:600;margin:.8em 0 .3em" id="langLbl"></div><select id="langSel"></select>
