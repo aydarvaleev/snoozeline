@@ -3,16 +3,32 @@
     "interstitial": {
       "placementFallback": "level_completed",
       "placements": [
-        { "id": "level_completed" },
-        { "id": "level_failed" },
-        { "id": "menu" }
+        {
+          "id": "level_completed"
+        },
+        {
+          "id": "level_failed"
+        },
+        {
+          "id": "menu"
+        }
       ]
     },
     "rewarded": {
       "placements": [
-        { "id": "skip_level" },
-        { "id": "show_hint" }
+        {
+          "id": "skip_level"
+        },
+        {
+          "id": "show_hint"
+        }
       ]
     }
-  }
+  },
+  "leaderboards": [
+    {
+      "id": "total_score",
+      "isMain": true
+    }
+  ]
 }

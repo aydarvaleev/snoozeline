@@ -7,7 +7,7 @@
   var stage = $('stage');
 
   /* ---------- state ---------- */
-  var save = { done: {}, stars: {}, sound: true, music: true, lang: null, skin: 'ginger', seen: 1 };
+  var save = { done: {}, stars: {}, score: {}, sound: true, music: true, lang: null, skin: 'ginger', seen: 1 };
   // chapters of 6 levels; more levels simply add more chapters at the end
   var CH = 6;
   function chapterOf(i) { return Math.floor(i / CH); }
@@ -20,6 +20,16 @@
   // second chapter of a world uses the alternative background (or a level may say so itself)
   function variantOf(i) { var L = LEVELS[i]; return L && L.v != null ? L.v : chapterOf(i) % 2; }
   function totalStars() { var n = 0; for (var k in save.stars) n += save.stars[k] || 0; return n; }
+  // score of one run: 1000 for the win + up to 600 for saved ink (against the level's slack) + 400 / 150 for 0 / 1 hits
+  function runScore(sm) {
+    var L = sm.level, slack = Math.max(1, L.ink - (L.minInk || 0));
+    var eff = Math.max(0, Math.min(1, (L.ink - sm.inkUsed) / slack));
+    return 1000 + Math.round(600 * eff) + (sm.hurts === 0 ? 400 : (sm.hurts === 1 ? 150 : 0));
+  }
+  // levels finished before scores existed count by their stars
+  function levelScore(i) { return save.score[i] || (save.done[i] && save.stars[i] ? 1000 + [0, 0, 300, 600][save.stars[i]] : 0); }
+  function totalScore() { var n = 0; for (var i = 0; i < LEVELS.length; i++) n += levelScore(i); return n; }
+  function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u2009'); }
   function skinsUnlocked(st) { return Art.SKINS.filter(function (k) { return k.cost <= st; }).length; }
   var lang = 'en', cur = 0, sim = null, drawing = null, fails = 0, paused = false, screen = 'menu', particles = [], shake = 0, hurtFlash = 0;
   var levelsPlayed = 0, catHurt = 0, catHappy = 0, hintFor = -1, toastT = 0;
@@ -30,6 +40,7 @@
     return v ? d.replace('{n}', v) : d;
   }
   var ICONS = {
+    trophy: '<path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V17h3v3H8v-3h3v-2.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3zm0 4H6v1a2 2 0 0 0 1 1.7zm10 0v2.7A2 2 0 0 0 18 8V7z"/>',
     cat: '<path d="M4 3l4 4h8l4-4v9a8 8 0 0 1-16 0zm5 8a1.3 1.3 0 1 0 0 2.6A1.3 1.3 0 0 0 9 11zm6 0a1.3 1.3 0 1 0 0 2.6A1.3 1.3 0 0 0 15 11zm-3 4l-1.5 1.2h3z"/>',
     play: '<path d="M8 5v14l11-7z"/>', retry: '<path d="M17.65 6.35A8 8 0 1 0 19.73 14h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"/>',
     menu: '<path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/>', gear: '<path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.5 7.5 0 0 0-1.7-1L15 3h-4l-.4 3a7.5 7.5 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1c.5.4 1.1.7 1.7 1l.4 3h4l.4-3c.6-.3 1.2-.6 1.7-1l2.4 1 2-3.4zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/>',
@@ -80,11 +91,11 @@
   document.addEventListener('visibilitychange', function () { applyAudio(); });
 
   /* ---------- persistence ---------- */
-  function persist() { P.set(['catnap'], [JSON.stringify({ done: save.done, stars: save.stars, sound: save.sound, music: save.music, lang: save.lang, skin: save.skin, seen: save.seen })]); }
+  function persist() { P.set(['catnap'], [JSON.stringify({ done: save.done, stars: save.stars, sound: save.sound, music: save.music, lang: save.lang, skin: save.skin, seen: save.seen, score: save.score })]); }
   function loadSave() {
     return P.get(['catnap']).then(function (v) {
       try { var o = v[0]; if (typeof o === 'string') o = JSON.parse(o); // Bridge may hand back an already parsed object
-       if (o) { save.done = o.done || {}; save.stars = o.stars || {}; save.sound = o.sound !== false; save.music = o.music !== false; save.lang = o.lang || null; save.skin = o.skin || 'ginger'; save.seen = o.seen || 1; } } catch (e) {}
+       if (o) { save.done = o.done || {}; save.stars = o.stars || {}; save.sound = o.sound !== false; save.music = o.music !== false; save.lang = o.lang || null; save.skin = o.skin || 'ginger'; save.seen = o.seen || 1; save.score = o.score || {}; } } catch (e) {}
     });
   }
   function unlockedMax() { var m = 0; for (var k in save.done) m = Math.max(m, +k + 1); return Math.min(m, LEVELS.length - 1); }
@@ -122,21 +133,25 @@
     var hs = ''; for (var i = 0; i < (sim ? sim.level.sleep || 3 : 3); i++) hs += '<span class="z ' + (sim && i >= sim.sleep ? 'off' : '') + '">z</span>';
     $('zs').innerHTML = hs;
   }
-  function hideModals() { $('win').classList.add('hide'); $('fail').classList.add('hide'); $('settings').classList.add('hide'); $('shop').classList.add('hide'); }
+  function hideModals() { $('win').classList.add('hide'); $('fail').classList.add('hide'); $('settings').classList.add('hide'); $('shop').classList.add('hide'); $('board').classList.add('hide'); }
 
   function onWin() {
     var s = sim.stars(), wasDone = !!save.done[cur], before = totalStars();
+    var sc = runScore(sim), oldTotal = totalScore(), record = sc > levelScore(cur) && wasDone;
+    if (sc > levelScore(cur)) save.score[cur] = sc;
     catHappy = 1; confetti(); save.done[cur] = 1; save.stars[cur] = Math.max(save.stars[cur] || 0, s); persist(); fails = 0;
     var c = chapterOf(cur), chDone = !wasDone, after = totalStars();
     for (var q = c * CH; q < Math.min(c * CH + CH, LEVELS.length); q++) if (!save.done[q]) chDone = false;
-    var lines = '';
+    var newTotal = totalScore();
+    var lines = '<div class="sc">' + t('scoreN', fmt(sc)) + (record ? ' <b>' + t('record') + '</b>' : '') + '</div>';
+    if (newTotal > oldTotal) P.setScore(newTotal);
     if (chDone) {
       lines += '<div class="cd">' + t('chapDone') + '</div>';
       if ((c + 1) * CH < LEVELS.length) lines += '<div class="cn">' + t('nextCh', chapterName(c + 1)) + '</div>';
       setTimeout(confetti, 700);
     }
     if (skinsUnlocked(after) > skinsUnlocked(before)) lines += '<div class="nc">' + ic('cat') + '<span>' + t('newCat') + '</span></div>';
-    $('winExtra').innerHTML = lines; $('winExtra').classList.toggle('hide', !lines);
+    $('winExtra').innerHTML = lines; $('winExtra').classList.remove('hide');
     sfx('sfx_win'); P.msg('level_completed', String(cur + 1));
     var st = ''; for (var i = 0; i < 3; i++) st += ic('star', i < s ? 'on' : 'off');
     $('winstars').innerHTML = st; $('winTitle').textContent = cur >= LEVELS.length - 1 ? t('the_end') : t('win');
@@ -179,6 +194,9 @@
     $('menuTitle').textContent = t('title');
     var ts = totalStars(), nu = skinsUnlocked(ts);
     $('starTotal').innerHTML = ic('star', 'on') + '<span>' + ts + '</span>';
+    $('scoreTotal').innerHTML = ic('trophy') + '<span>' + fmt(totalScore()) + '</span>';
+    var lb = P.lbType === 'in_game' || P.lbType === 'native_popup';
+    $('scoreTotal').classList.toggle('tap', lb); $('scoreTotal').setAttribute('aria-label', t('leaderboard'));
     $('catBtn').innerHTML = ic('cat') + (nu > save.seen ? '<i class="dot"></i>' : '');
     $('catBtn').setAttribute('aria-label', t('cats'));
     var mx = $('levelList').querySelector('.lv.cur');
@@ -218,6 +236,26 @@
   });
   $('catBtn').onclick = function () { audioInit(); sfx('sfx_click'); openShop(); };
   $('closeShop').onclick = function () { sfx('sfx_click'); $('shop').classList.add('hide'); };
+
+  /* ---------- leaderboard ---------- */
+  function openBoard() {
+    if (P.lbType === 'native_popup') { P.showNativeBoard(); return; }
+    if (P.lbType !== 'in_game') return;
+    $('lbTitle').textContent = t('leaderboard');
+    $('lbMine').innerHTML = ic('trophy') + '<span>' + t('yourScore', fmt(totalScore())) + '</span>';
+    $('lbList').innerHTML = '<div class="lbmsg">…</div>';
+    $('closeLb').innerHTML = ic('close'); $('closeLb').setAttribute('aria-label', t('close'));
+    $('board').classList.remove('hide');
+    P.getEntries().then(function (es) {
+      if (!es || !es.length) { $('lbList').innerHTML = '<div class="lbmsg">' + t('lbEmpty') + '</div>'; return; }
+      $('lbList').innerHTML = es.slice(0, 20).map(function (e, k) {
+        var nm = String(e.name || '—').replace(/[<>&"]/g, '');
+        return '<div class="lbr"><b>' + (e.rank || k + 1) + '</b><span>' + nm + '</span><i>' + fmt(e.score || 0) + '</i></div>';
+      }).join('');
+    }).catch(function () { $('lbList').innerHTML = '<div class="lbmsg">' + t('lbError') + '</div>'; });
+  }
+  $('scoreTotal').onclick = function () { if (!this.classList.contains('tap')) return; audioInit(); sfx('sfx_click'); openBoard(); };
+  $('closeLb').onclick = function () { sfx('sfx_click'); $('board').classList.add('hide'); };
 
   /* ---------- settings ---------- */
   function buildSettings() {

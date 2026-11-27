@@ -164,3 +164,18 @@ window.LANG_NAMES = { en: 'English', ru: 'Русский', de: 'Deutsch', es: 'E
   };
   for (var k in add) if (X[k]) for (var s in add[k]) X[k][s] = add[k][s];
 })(window.I18N);
+// v5: score and leaderboard
+(function (X) {
+  var add = {
+    en: { scoreN: 'Score: {n}', record: 'New best!', leaderboard: 'Leaderboard', yourScore: 'Your score: {n}', lbEmpty: 'No scores yet', lbError: 'Leaderboard is unavailable' },
+    ru: { scoreN: 'Очки: {n}', record: 'Новый рекорд!', leaderboard: 'Рейтинг', yourScore: 'Твои очки: {n}', lbEmpty: 'Пока никого нет', lbError: 'Рейтинг недоступен' },
+    de: { scoreN: 'Punkte: {n}', record: 'Neuer Rekord!', leaderboard: 'Bestenliste', yourScore: 'Deine Punkte: {n}', lbEmpty: 'Noch keine Punkte', lbError: 'Bestenliste nicht verfügbar' },
+    es: { scoreN: 'Puntos: {n}', record: '¡Nuevo récord!', leaderboard: 'Clasificación', yourScore: 'Tus puntos: {n}', lbEmpty: 'Aún no hay puntuaciones', lbError: 'Clasificación no disponible' },
+    fr: { scoreN: 'Score : {n}', record: 'Nouveau record !', leaderboard: 'Classement', yourScore: 'Ton score : {n}', lbEmpty: 'Aucun score pour l’instant', lbError: 'Classement indisponible' },
+    pt: { scoreN: 'Pontos: {n}', record: 'Novo recorde!', leaderboard: 'Classificação', yourScore: 'Os teus pontos: {n}', lbEmpty: 'Ainda sem pontuações', lbError: 'Classificação indisponível' },
+    tr: { scoreN: 'Puan: {n}', record: 'Yeni rekor!', leaderboard: 'Sıralama', yourScore: 'Puanın: {n}', lbEmpty: 'Henüz puan yok', lbError: 'Sıralama kullanılamıyor' },
+    id: { scoreN: 'Skor: {n}', record: 'Rekor baru!', leaderboard: 'Peringkat', yourScore: 'Skormu: {n}', lbEmpty: 'Belum ada skor', lbError: 'Peringkat tidak tersedia' },
+    hi: { scoreN: 'अंक: {n}', record: 'नया रिकॉर्ड!', leaderboard: 'लीडरबोर्ड', yourScore: 'तुम्हारे अंक: {n}', lbEmpty: 'अभी कोई अंक नहीं', lbError: 'लीडरबोर्ड उपलब्ध नहीं' }
+  };
+  for (var k in add) if (X[k]) for (var s in add[k]) X[k][s] = add[k][s];
+})(window.I18N);
