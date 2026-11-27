@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build dist/snoozeline-playgama.zip (upload to Playgama) and dist/snoozeline-standalone.html (single-file playtest)."""
+"""Build dist/snoozeline-playgama.zip (upload to Playgama), dist/snoozeline-crazygames.zip + dist/crazygames-covers/ and dist/snoozeline-standalone.html (single-file playtest)."""
 import re, base64, os, shutil, subprocess
 shutil.rmtree('dist', ignore_errors=True)
 os.makedirs('dist/zip/src'); os.makedirs('dist/zip/assets')
@@ -8,6 +8,11 @@ for f in ['sim', 'levels', 'i18n', 'platform', 'art', 'game']: shutil.copy(f'src
 for f in os.listdir('assets'): shutil.copy('assets/' + f, 'dist/zip/assets/')
 shutil.copytree('licenses', 'dist/zip/licenses')
 subprocess.run('cd dist/zip && zip -qr ../snoozeline-playgama.zip .', shell=True, check=True)
+# CrazyGames: the same build (Bridge detects the platform and loads the CrazyGames SDK itself) plus their covers
+subprocess.run('cd dist/zip && zip -qr ../snoozeline-crazygames.zip .', shell=True, check=True)
+os.makedirs('dist/crazygames-covers')
+for src, dst in [('cover_landscape.png', 'landscape_1920x1080.png'), ('cover_portrait23.png', 'portrait_800x1200.png'), ('cover_square.png', 'square_800x800.png')]:
+    if os.path.exists('promo/' + src): shutil.copy('promo/' + src, 'dist/crazygames-covers/' + dst)
 d = 'dist/zip/'; h = open(d + 'index.html').read()
 h = re.sub(r'<script src="([^"]+)"></script>', lambda m: '' if 'bridge' in m.group(1) else '<script>' + open(d + m.group(1)).read().replace('</script>', '<\\/script>') + '</script>', h)
 b64 = {n[:-4]: base64.b64encode(open('assets/' + n, 'rb').read()).decode() for n in os.listdir('assets')}

@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   var P = {
-    kind: 'standalone', lang: 'en', audio: true, paused: false,
+    kind: 'standalone', id: '', lang: 'en', audio: true, paused: false,
     rewardedSupported: false, interstitialSupported: false, mem: {}, lbType: 'not_available',
     onPause: function () {}, onAudio: function () {}
   };
@@ -15,6 +15,7 @@
     if (b && typeof b.initialize === 'function') {
       return b.initialize().then(function () {
         P.kind = 'bridge';
+        try { P.id = String(b.platform.id || ''); } catch (e) { P.id = ''; }
         P.lang = String(b.platform.language || 'en').slice(0, 2).toLowerCase();
         P.audio = b.platform.isAudioEnabled !== false;
         P.rewardedSupported = !!b.advertisement.isRewardedSupported;

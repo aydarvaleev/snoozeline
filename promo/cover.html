@@ -11,6 +11,7 @@
   var SLOTS = {
     square: { w: 800, h: 800, cx: 180, cy: 446, vh: 330, ty: 0.12, ts: 0.13 },
     portrait: { w: 1080, h: 1920, cx: 180, cy: 330, vh: 600, ty: 0.072, ts: 0.12 },
+    portrait23: { w: 800, h: 1200, cx: 180, cy: 322, vh: 540, ty: 0.085, ts: 0.12 }, // CrazyGames 2:3
     landscape: { w: 1920, h: 1080, cx: 180, cy: 450, vh: 340, ty: 0.12, ts: 0.11 }
   };
   function scene(ctx) {
@@ -63,7 +64,7 @@
     c.id = name; document.body.appendChild(c);
     return c;
   }
-  var out = ['square', 'portrait', 'landscape'].map(render);
+  var out = ['square', 'portrait', 'landscape', 'portrait23'].map(render);
   var m = /[?&]send=([^&]+)/.exec(location.search);
   if (m) {
     var target = decodeURIComponent(m[1]);

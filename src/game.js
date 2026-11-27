@@ -172,6 +172,7 @@
   /* ---------- menu / levels ---------- */
   function showMenu() {
     var shopOpen = !$('shop').classList.contains('hide');
+    if (sim && (sim.state === 'running' || sim.state === 'ready')) P.msg('level_paused', String(cur + 1)); // left a level midway: gameplay stops
     screen = 'menu'; sim = null; hideModals(); if (shopOpen) $('shop').classList.remove('hide'); $('hud').classList.add('hide'); $('hint').classList.add('hide'); $('tapHint').classList.add('hide'); $('toast').classList.add('hide'); $('menu').classList.remove('hide');
     var max = unlockedMax(), html = '';
     for (var c = 0; c < chapterCount(); c++) {
@@ -269,8 +270,10 @@
     $('musT').onclick = function () { save.music = !save.music; persist(); applyAudio(); buildSettings(); };
   }
   $('langSel').onchange = function () { lang = this.value; save.lang = lang; persist(); buildSettings(); applyText(); if (screen === 'menu') showMenu(); };
-  function openSettings() { audioInit(); buildSettings(); $('settings').classList.remove('hide'); if (sim && sim.state === 'running') paused = true; }
-  function closeSettings() { $('settings').classList.add('hide'); paused = P.paused; applyAudio(); }
+  // settings during a level pause it; CrazyGames gets gameplayStop/Start through these messages
+  var setPaused = false;
+  function openSettings() { audioInit(); buildSettings(); $('settings').classList.remove('hide'); if (sim && sim.state === 'running') { paused = true; setPaused = true; P.msg('level_paused', String(cur + 1)); } }
+  function closeSettings() { $('settings').classList.add('hide'); paused = P.paused; applyAudio(); if (setPaused) { setPaused = false; P.msg('level_resumed', String(cur + 1)); } }
   $('gear').onclick = $('gear2').onclick = function () { sfx('sfx_click'); openSettings(); };
   $('closeSet').onclick = closeSettings;
   $('menuBtn').onclick = function () { sfx('sfx_click'); showMenu(); };
@@ -278,7 +281,8 @@
   $('retry2').onclick = function () { sfx('sfx_click'); P.interstitial('level_failed'); startLevel(cur); };
   $('retry3').onclick = function () { sfx('sfx_click'); P.interstitial('level_completed'); startLevel(cur); };
   $('nextBtn').onclick = function () { sfx('sfx_click'); P.interstitial('level_completed'); startLevel(Math.min(cur + 1, LEVELS.length - 1)); };
-  $('menu2').onclick = $('menu3').onclick = function () { sfx('sfx_click'); P.interstitial('menu'); showMenu(); };
+  // CrazyGames forbids ads on navigation buttons; elsewhere the menu after a result is a natural pause
+  $('menu2').onclick = $('menu3').onclick = function () { sfx('sfx_click'); if (P.id !== 'crazy_games') P.interstitial('menu'); showMenu(); };
   $('hintBtn').onclick = function () {
     P.rewarded('show_hint', function (ok) { if (ok) { hintFor = cur; startLevel(cur); } });
   };

@@ -40,6 +40,11 @@ Sim resets Matter's body ids per level (deterministic per engine). Chaos world: 
 - Leaderboard UI follows bridge.leaderboards.type: in_game -> our modal (getEntries), native_popup -> showNativePopup, native/not_available -> no board (score pill stays, not tappable). `?mock=1` fakes an in_game board.
 - Playgama itself has no native board: enable SaaS leaderboards by adding `"saas": {"publicToken": "...", "leaderboards": {"platforms": ["playgama", "qa_tool"]}}` to playgama-bridge-config.json (token from the game card in developer.playgama.com -> Bridge SaaS -> Leaderboards). Done 2026-11-27: draft game card Snoozeline (application id cmwymo3a20pwpno0h7op16t4w) with leaderboard total_score; its publicToken is in the config. Archive snoozeline-1.5.0 (id cmwymusgp188imz0hf7lk937d) uploaded 2026-11-27: build check PASSED, Bridge 2.4.4 found; SaaS board answers in the QA tool. Next in the console: covers (square/portrait/landscape), form, certification; form filled (category puzzle, 9 languages, iOS/Android/desktop, both orientations, leaderboards). Sandbox published 2026-11-27 on the owner's yes: https://playgama.ai/play/gklwt2vjc5lt3g (no moderation). Still the owner's: Guided Certification in the QA tool, then moderation; distributeEverywhere and link left unset. Every new upload needs a new explicit yes.
 
+## CrazyGames
+- build.py also writes dist/snoozeline-crazygames.zip (same files: Bridge detects crazy_games and loads their SDK v3 itself) and dist/crazygames-covers/ (1920x1080, 800x1200, 800x800 from promo/cover.html). Upload is done by the owner on developer.crazygames.com.
+- Their rules handled in code via P.id === 'crazy_games': no interstitial on the result-screen Menu button (no ads on navigation). level_paused/level_resumed are sent for settings during a level and when leaving a level for the menu (Bridge relays them as gameplayStop/Start). Leaderboard is hidden there (type not_available).
+- Test locally with `?platform_id=crazy_games` (CrazyGames SDK runs in its local environment).
+
 ## Open items
 - Playtest with humans; fix unfair levels (watch attic and workshop, where one "pi" box solves many levels and difficulty comes mostly from the shrinking ink budget).
 - Safari < 15 / old iOS may not decode Ogg Vorbis: add .mp3 copies of assets (game already falls back to .mp3 when ogg is unsupported).
