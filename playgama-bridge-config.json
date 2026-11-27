@@ -30,5 +30,14 @@
       "id": "total_score",
       "isMain": true
     }
-  ]
+  ],
+  "saas": {
+    "publicToken": "cmwymo3a20pwpno0h7op16t4w",
+    "leaderboards": {
+      "platforms": [
+        "playgama",
+        "qa_tool"
+      ]
+    }
+  }
 }

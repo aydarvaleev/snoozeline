@@ -38,7 +38,7 @@ Sim resets Matter's body ids per level (deterministic per engine). Chaos world: 
 - Bridge storage.get may return the save already parsed (object) — loadSave() accepts both. `__catnap.reload()` reloads the save (testing).
 - Score (v5): runScore() = 1000 per win + up to 600 for saved ink (vs the level's slack) + 400/150 for 0/1 hits; best per level in save.score; levels done before v5 count 1000 + 0/300/600 by stars. Total goes to leaderboard `total_score` (config `leaderboards`, isMain) via P.setScore when it grows.
 - Leaderboard UI follows bridge.leaderboards.type: in_game -> our modal (getEntries), native_popup -> showNativePopup, native/not_available -> no board (score pill stays, not tappable). `?mock=1` fakes an in_game board.
-- Playgama itself has no native board: enable SaaS leaderboards by adding `"saas": {"publicToken": "...", "leaderboards": {"platforms": ["playgama", "qa_tool"]}}` to playgama-bridge-config.json (token from the game card in developer.playgama.com -> Bridge SaaS -> Leaderboards). The game card for Snoozeline does not exist yet — ask the owner before creating anything there.
+- Playgama itself has no native board: enable SaaS leaderboards by adding `"saas": {"publicToken": "...", "leaderboards": {"platforms": ["playgama", "qa_tool"]}}` to playgama-bridge-config.json (token from the game card in developer.playgama.com -> Bridge SaaS -> Leaderboards). Done 2026-11-27: draft game card Snoozeline (application id cmwymo3a20pwpno0h7op16t4w) with leaderboard total_score; its publicToken is in the config. Nothing uploaded yet.
 
 ## Open items
 - Playtest with humans; fix unfair levels (watch attic and workshop, where one "pi" box solves many levels and difficulty comes mostly from the shrinking ink budget).
